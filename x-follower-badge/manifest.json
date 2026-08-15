@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "X Follower Badge",
+  "version": "1.0.0",
+  "description": "Shows each post author's follower count as a small badge next to the timestamp on X (Twitter).",
+  "permissions": ["storage"],
+  "host_permissions": ["https://x.com/*", "https://twitter.com/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://x.com/*", "https://twitter.com/*"],
+      "js": ["content.js"],
+      "css": ["styles.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}
