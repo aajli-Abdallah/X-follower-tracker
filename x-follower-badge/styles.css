@@ -7,14 +7,16 @@
   line-height: 16px;
   font-weight: 600;
   border-radius: 9999px;
-  background: rgba(29, 155, 240, 0.10);
+  background: rgba(29, 155, 240, 0.12);
   color: rgb(29, 155, 240);
   white-space: nowrap;
   vertical-align: middle;
   user-select: none;
+  transition: opacity 0.2s ease-in-out, background-color 0.2s ease-in-out;
+  cursor: default;
 }
 
 .xfb-badge--error {
-  background: rgba(120, 120, 120, 0.10);
+  background: rgba(120, 120, 120, 0.12);
   color: rgb(120, 120, 120);
 }

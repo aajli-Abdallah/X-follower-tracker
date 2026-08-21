@@ -1,31 +1,80 @@
-# X Follower Badge
+# X Follower Tracker (Chrome Extension) 👥✨
 
-Adds a small "👥 12.3K" badge right next to the timestamp on every post in your X (Twitter) timeline, showing that post's author's follower count.
+[![Manifest V3](https://img.shields.io/badge/Manifest-V3-brightgreen.svg)](x-follower-badge/manifest.json)
+[![Version](https://img.shields.io/badge/version-1.0.1-blue.svg)](x-follower-badge/manifest.json)
+[![Browser Support](https://img.shields.io/badge/browsers-Chrome%20%7C%20Brave%20%7C%20Edge-orange.svg)](#installation)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-## Install (unpacked, for development/personal use)
+A lightweight Chromium browser extension (Manifest V3) that injects an author follower count badge (e.g., `👥 12.3K`) directly next to the timestamp on every post across your X (Twitter) timeline.
 
-1. Unzip this folder somewhere permanent (don't delete it after installing).
-2. Open `chrome://extensions` in Chrome.
-3. Turn on **Developer mode** (top right).
-4. Click **Load unpacked** and select the `x-follower-badge` folder.
-5. Open `x.com` (make sure you're logged in) and scroll your feed — badges will fade in next to timestamps within a second or two.
+---
 
-## How it works
+## ✨ Features
 
-X doesn't put follower counts in a tweet's HTML. This extension calls X's internal `UserByScreenName` GraphQL endpoint — the same one the site itself uses when you hover a profile — using your existing logged-in session (your `ct0` cookie) plus X's public web-client bearer token. Results are cached per handle for 6 hours (in `chrome.storage.local`) so the same author isn't re-fetched on every scroll, and requests are throttled to one every ~1.2s.
+- **Inline Follower Badges**: Shows author follower counts next to post timestamps on your timeline.
+- **Smart Caching Layer**: Multi-tier caching (in-memory Map + `chrome.storage.local`) with a 6-hour TTL to prevent redundant network requests.
+- **Request Throttling**: Queues and throttles GraphQL requests (~1.2s gap) to respect rate limits and keep the browsing experience smooth.
+- **Zero API Key Setup**: Uses your active browser session on `x.com` / `twitter.com`.
+- **Dynamic Timeline Support**: Observes dynamic feed updates and Infinite Scroll via `MutationObserver`.
 
-## Known limitations
+---
 
-- **You must be logged into X** in that tab — logged-out/guest sessions won't have the cookie this needs.
-- **This is an undocumented, internal API.** X can change the query ID or response shape at any time, which will break the badge (you'll see a `?` badge instead of a count). If that happens:
-  1. Open X in Chrome, open DevTools → Network tab, filter for `UserByScreenName`.
-  2. Hover a profile card or visit a profile to trigger the request.
-  3. Copy the new query ID from the request URL (`/i/api/graphql/<QUERY_ID>/UserByScreenName`) into `content.js`.
-- Heavy scrolling through very active feeds will queue up a lot of lookups; they resolve gradually rather than all at once, by design, to avoid hammering the endpoint.
-- Selectors are based on X's current DOM structure (`article[data-testid="tweet"]`, etc.) and may need updating if X redesigns the timeline markup.
+## 🚀 Installation
 
-## Files
+Works with **Google Chrome**, **Brave**, **Microsoft Edge**, and any Chromium-based browser.
 
-- `manifest.json` — extension config (Manifest V3)
-- `content.js` — finds tweets, resolves follower counts, injects badges
-- `styles.css` — badge styling
+1. **Clone or download** this repository:
+   ```bash
+   git clone https://github.com/aajli-Abdallah/X-follower-tracker.git
+   ```
+2. Open your browser's extension management page:
+   - **Chrome**: `chrome://extensions`
+   - **Brave**: `brave://extensions`
+   - **Edge**: `edge://extensions`
+3. Enable **Developer mode** (toggle in the top-right corner).
+4. Click **Load unpacked**.
+5. Select the `x-follower-badge` folder inside this repository.
+6. Open [x.com](https://x.com) (ensure you are logged in) and scroll your timeline — badges will appear next to post timestamps!
+
+---
+
+## ⚙️ How It Works
+
+1. **DOM Monitoring**: Uses `MutationObserver` to watch for `article[data-testid="tweet"]` elements.
+2. **Handle Resolution**: Extracts the author's screen name from the status permalink timestamp.
+3. **Session Querying**: Calls X's internal GraphQL endpoint (`UserByScreenName`) utilizing the active `ct0` CSRF cookie and public client bearer authorization.
+4. **Badge Injection**: Formats the numerical count (e.g., `1.2K`, `3.4M`) and injects a styled pill badge next to the `<time>` link.
+
+---
+
+## 📁 Project Structure
+
+```
+├── .gitignore                  # Git ignore rules for browser extension projects
+├── README.md                   # Project documentation & installation guide
+└── x-follower-badge/           # Extension root (load this directory in Chrome)
+    ├── manifest.json           # Manifest V3 configuration & permissions
+    ├── content.js              # Content script (DOM observer, caching, API query)
+    ├── styles.css              # Badge styling and themes
+    └── README.md               # Extension-specific notes
+```
+
+---
+
+## 🔧 Troubleshooting & Known Limitations
+
+- **Authentication Required**: You must be logged into X in the active browser tab.
+- **Internal GraphQL Query ID**: X periodically updates GraphQL query hashes. If badges display `?` error states:
+  1. Open DevTools (`F12`) on X, go to the **Network** tab, and filter by `UserByScreenName`.
+  2. Hover over any profile card to trigger the request.
+  3. Copy the updated query ID from the request URL (`/i/api/graphql/<QUERY_ID>/UserByScreenName`).
+  4. Update `QUERY_ID` at the top of `x-follower-badge/content.js` and reload the extension in `chrome://extensions`.
+
+---
+
+## 🏷️ Release Notes (v1.0.1)
+
+- Added standard `.gitignore` for extension projects.
+- Bumped extension version to `1.0.1` in `manifest.json`.
+- Enhanced badge styling and hover transition effects.
+- Added comprehensive repository documentation and installation guide.
