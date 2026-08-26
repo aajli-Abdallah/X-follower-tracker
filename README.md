@@ -6,7 +6,8 @@
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 A lightweight Chromium browser extension (Manifest V3) that injects an author follower count badge (e.g., `👥 12.3K`) directly next to the timestamp on every post across your X (Twitter) timeline.
-
+# chromewebstore
+https://chromewebstore.google.com/detail/x-follower-badge/ndhpilocfkkgojkbamejgngmmnfaljin
 ---
 
 ## ✨ Features
