@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>X Follower Tracker & Enhancer</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="brand">
+        <div class="logo-circle">&#128101;</div>
+        <div class="title-wrap">
+          <h1 class="title">X Tracker</h1>
+          <span class="version-tag">v1.1.0</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Settings Section -->
+    <main class="settings-list">
+      <!-- Toggle: Auto-Expand Show More -->
+      <div class="setting-item">
+        <div class="setting-info">
+          <label for="autoExpandShowMore" class="setting-label">Auto-Expand "Show more"</label>
+          <p class="setting-desc">Automatically unfolds long posts across your timeline so you never have to click "Show more".</p>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="autoExpandShowMore">
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <!-- Toggle: Follower Badges -->
+      <div class="setting-item">
+        <div class="setting-info">
+          <label for="showFollowerBadge" class="setting-label">Author Follower Badges</label>
+          <p class="setting-desc">Displays author follower count pills (e.g. &#128101; 12.3K) next to post timestamps.</p>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="showFollowerBadge">
+          <span class="slider"></span>
+        </label>
+      </div>
+    </main>
+
+    <!-- Stats & Maintenance -->
+    <section class="stats-section">
+      <div class="stat-row">
+        <span class="stat-label">Cached Profiles</span>
+        <span class="stat-value" id="cachedCount">0</span>
+      </div>
+      <button id="clearCacheBtn" class="btn-secondary" type="button">Clear Cache</button>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <span class="status-dot"></span>
+      <span>Live sync with active X tabs</span>
+    </footer>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

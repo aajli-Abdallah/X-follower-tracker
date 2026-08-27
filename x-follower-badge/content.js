@@ -1,34 +1,116 @@
-// X Follower Badge — content script
-// Adds a small "follower count" badge next to the timestamp on every tweet.
-//
-// How it works:
-// 1. Watches the DOM for tweet <article> elements.
-// 2. For each tweet, figures out the author's @handle from the timestamp's
-//    permalink (the <a href="/handle/status/123"> that wraps <time>).
-// 3. Looks up the follower count for that handle (cached), via X's internal
-//    GraphQL "UserByScreenName" endpoint — the same call the site itself
-//    makes when you hover a profile card. This requires you to be logged in.
-// 4. Inserts a small pill badge right after the timestamp.
-//
-// NOTE: This relies on an undocumented endpoint (query id + bearer token)
-// that X can change at any time. If badges stop appearing, see the README
-// for how to find the current query id in devtools.
+// X Follower Tracker & Enhancer ? Content Script
+// Adds follower count badges & auto-expands "Show more" posts on X (Twitter).
 
 (() => {
-  const QUERY_ID = "G3KGOASz96M-Qu0nwmGXNg"; // UserByScreenName — may go stale, see README
+  const QUERY_ID = "G3KGOASz96M-Qu0nwmGXNg"; // UserByScreenName ? may go stale, see README
   const BEARER =
     "AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA";
   const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
   const REQUEST_GAP_MS = 1200; // throttle between API calls
 
+  const settings = {
+    autoExpandShowMore: true,
+    showFollowerBadge: true,
+  };
+
   const processedTweets = new WeakSet();
+  const expandedElements = new WeakSet();
   const memoryCache = new Map(); // handle -> { count, ts }
   const queue = [];
   let draining = false;
 
   function log(...args) {
-    console.debug("[XFollowerBadge]", ...args);
+    console.debug("[XTracker]", ...args);
   }
+
+  // --- Settings & UI Visibility ---
+
+  function applyBadgeVisibility() {
+    document.documentElement.classList.toggle("xfb-hide-badges", !settings.showFollowerBadge);
+  }
+
+  async function loadSettings() {
+    try {
+      const stored = await chrome.storage.local.get(["autoExpandShowMore", "showFollowerBadge"]);
+      if (stored.autoExpandShowMore !== undefined) {
+        settings.autoExpandShowMore = Boolean(stored.autoExpandShowMore);
+      }
+      if (stored.showFollowerBadge !== undefined) {
+        settings.showFollowerBadge = Boolean(stored.showFollowerBadge);
+      }
+    } catch (err) {
+      log("Error loading settings:", err);
+    }
+    applyBadgeVisibility();
+    if (settings.autoExpandShowMore) {
+      expandAllVisiblePosts();
+    }
+  }
+
+  // Listen for real-time setting changes from popup
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== "local") return;
+    if (changes.autoExpandShowMore !== undefined) {
+      settings.autoExpandShowMore = Boolean(changes.autoExpandShowMore.newValue);
+      if (settings.autoExpandShowMore) {
+        expandAllVisiblePosts();
+      }
+    }
+    if (changes.showFollowerBadge !== undefined) {
+      settings.showFollowerBadge = Boolean(changes.showFollowerBadge.newValue);
+      applyBadgeVisibility();
+    }
+  });
+
+  // --- "Show More" Auto-Expansion ---
+
+  function tryExpandShowMore(container) {
+    if (!settings.autoExpandShowMore || !container) return;
+
+    // 1. Direct standard testid selector
+    const directBtn = container.querySelector?.('[data-testid="tweet-text-show-more-link"]');
+    if (directBtn && !expandedElements.has(directBtn)) {
+      expandedElements.add(directBtn);
+      directBtn.click();
+      return;
+    }
+
+    // 2. If the container itself is the show-more link
+    if (container.matches?.('[data-testid="tweet-text-show-more-link"]')) {
+      if (!expandedElements.has(container)) {
+        expandedElements.add(container);
+        container.click();
+        return;
+      }
+    }
+
+    // 3. Fallback: inspect buttons or interactive elements inside or adjacent to tweet text
+    const tweetText = container.querySelector?.('[data-testid="tweetText"]');
+    if (tweetText && tweetText.parentElement) {
+      const candidates = tweetText.parentElement.querySelectorAll('button, [role="button"], a');
+      for (const el of candidates) {
+        if (expandedElements.has(el)) continue;
+        const text = el.textContent?.trim().toLowerCase();
+        if (
+          text === "show more" ||
+          text === "afficher plus" ||
+          text === "mostrar m?s" ||
+          text === "mehr anzeigen" ||
+          text === "mostra altro"
+        ) {
+          expandedElements.add(el);
+          el.click();
+          break;
+        }
+      }
+    }
+  }
+
+  function expandAllVisiblePosts() {
+    document.querySelectorAll('article[data-testid="tweet"]').forEach(tryExpandShowMore);
+  }
+
+  // --- Follower Count Fetching & Caching ---
 
   function formatCount(n) {
     if (n >= 1_000_000) {
@@ -49,7 +131,7 @@
 
   async function fetchFollowerCount(handle) {
     const csrf = getCsrfToken();
-    if (!csrf) throw new Error("no ct0 csrf cookie found — are you logged in?");
+    if (!csrf) throw new Error("no ct0 csrf cookie found ? are you logged in?");
 
     const variables = encodeURIComponent(
       JSON.stringify({ screen_name: handle, withSafetyModeUserFields: true })
@@ -138,6 +220,8 @@
     draining = false;
   }
 
+  // --- Tweet Processing & DOM Manipulation ---
+
   function findPermalinkAnchor(article) {
     const timeEl = article.querySelector("time");
     if (!timeEl) return null;
@@ -169,6 +253,10 @@
   }
 
   async function processTweet(article) {
+    // 1. Try to auto-expand "Show more" if applicable
+    tryExpandShowMore(article);
+
+    // 2. Follower badge processing
     if (processedTweets.has(article)) return;
     const handle = getHandleForTweet(article);
     if (!handle) return;
@@ -176,7 +264,7 @@
 
     const cached = readCache(handle);
     if (cached !== undefined) {
-      insertBadge(article, makeBadge(`👥 ${formatCount(cached)}`));
+      insertBadge(article, makeBadge(`\u{1F465} ${formatCount(cached)}`));
       return;
     }
 
@@ -200,7 +288,7 @@
         placeholder.classList.add("xfb-badge--error");
         placeholder.title = "Couldn't load follower count";
       } else {
-        placeholder.textContent = `👥 ${formatCount(count)}`;
+        placeholder.textContent = `\u{1F465} ${formatCount(count)}`;
         placeholder.title = `${count.toLocaleString()} followers`;
       }
     });
@@ -210,19 +298,29 @@
     root.querySelectorAll('article[data-testid="tweet"]').forEach(processTweet);
   }
 
+  // --- Mutation Observer ---
+
   const observer = new MutationObserver((mutations) => {
     for (const m of mutations) {
       for (const node of m.addedNodes) {
         if (!(node instanceof HTMLElement)) continue;
         if (node.matches?.('article[data-testid="tweet"]')) {
           processTweet(node);
+        } else if (node.matches?.('[data-testid="tweet-text-show-more-link"]')) {
+          tryExpandShowMore(node);
         } else {
+          // Check for tweets inside the inserted node
           scan(node);
+          // Also check for show more links added dynamically inside existing tweets
+          tryExpandShowMore(node);
         }
       }
     }
   });
 
   observer.observe(document.body, { childList: true, subtree: true });
+
+  // Start
+  loadSettings();
   scan();
 })();

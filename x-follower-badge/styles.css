@@ -20,3 +20,8 @@
   background: rgba(120, 120, 120, 0.12);
   color: rgb(120, 120, 120);
 }
+
+/* When author follower badges are toggled off */
+html.xfb-hide-badges .xfb-badge {
+  display: none !important;
+}

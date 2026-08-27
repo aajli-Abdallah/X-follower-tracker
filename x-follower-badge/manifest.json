@@ -1,13 +1,33 @@
 {
   "manifest_version": 3,
-  "name": "X Follower Badge",
-  "version": "1.0.1",
-  "description": "Shows each post author's follower count as a small badge next to the timestamp on X (Twitter).",
+  "name": "X Follower Tracker & Enhancer",
+  "version": "1.1.0",
+  "description": "Shows author follower counts and automatically expands 'Show more' posts across your X (Twitter) timeline.",
   "permissions": ["storage"],
-  "host_permissions": ["https://x.com/*", "https://twitter.com/*"],
+  "host_permissions": [
+    "https://x.com/*",
+    "https://twitter.com/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "X Follower Tracker Settings",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
   "content_scripts": [
     {
-      "matches": ["https://x.com/*", "https://twitter.com/*"],
+      "matches": [
+        "https://x.com/*",
+        "https://twitter.com/*"
+      ],
       "js": ["content.js"],
       "css": ["styles.css"],
       "run_at": "document_idle"
