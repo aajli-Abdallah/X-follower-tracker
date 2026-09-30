@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>X Follower Tracker & Enhancer</title>
+  <title>X Follower Tracker & Enhancer v2.0.0</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
@@ -11,49 +11,180 @@
     <!-- Header -->
     <header class="header">
       <div class="brand">
-        <div class="logo-circle">&#128101;</div>
+        <div class="logo-box">
+          <img src="icons/icon48.png" alt="Logo" class="logo-img">
+        </div>
         <div class="title-wrap">
           <h1 class="title">X Tracker</h1>
-          <span class="version-tag">v1.1.0</span>
+          <span class="version-tag">v2.0.2</span>
         </div>
+      </div>
+      <div class="header-status">
+        <span class="pulse-dot"></span>
+        <span class="status-text">Active</span>
       </div>
     </header>
 
-    <!-- Settings Section -->
-    <main class="settings-list">
-      <!-- Toggle: Auto-Expand Show More -->
-      <div class="setting-item">
-        <div class="setting-info">
-          <label for="autoExpandShowMore" class="setting-label">Auto-Expand "Show more"</label>
-          <p class="setting-desc">Automatically unfolds long posts across your timeline so you never have to click "Show more".</p>
-        </div>
-        <label class="switch">
-          <input type="checkbox" id="autoExpandShowMore">
-          <span class="slider"></span>
-        </label>
-      </div>
+    <!-- Navigation Tabs -->
+    <nav class="tabs-nav">
+      <button class="tab-btn active" data-tab="settings">
+        <span class="tab-icon">⚙️</span> Settings
+      </button>
+      <button class="tab-btn" data-tab="crm">
+        <span class="tab-icon">🏷️</span> CRM & Notes <span class="tab-badge" id="crmCountBadge">0</span>
+      </button>
+      <button class="tab-btn" data-tab="engine">
+        <span class="tab-icon">⚡</span> Engine
+      </button>
+    </nav>
 
-      <!-- Toggle: Follower Badges -->
-      <div class="setting-item">
-        <div class="setting-info">
-          <label for="showFollowerBadge" class="setting-label">Author Follower Badges</label>
-          <p class="setting-desc">Displays author follower count pills (e.g. &#128101; 12.3K) next to post timestamps.</p>
+    <!-- Tab 1: Settings / Preferences -->
+    <main class="tab-pane active" id="pane-settings">
+      <div class="settings-list">
+        <!-- Toggle: Auto-Expand Show More -->
+        <div class="setting-item">
+          <div class="setting-info">
+            <label for="autoExpandShowMore" class="setting-label">Auto-Expand "Show more"</label>
+            <p class="setting-desc">Automatically unfolds long posts across your timeline so you never have to click.</p>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="autoExpandShowMore">
+            <span class="slider"></span>
+          </label>
         </div>
-        <label class="switch">
-          <input type="checkbox" id="showFollowerBadge">
-          <span class="slider"></span>
-        </label>
+
+        <!-- Toggle: Follower Badges -->
+        <div class="setting-item">
+          <div class="setting-info">
+            <label for="showFollowerBadge" class="setting-label">Author Follower Badges</label>
+            <p class="setting-desc">Displays author follower pills (e.g. 👥 12.3K) next to timestamps.</p>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="showFollowerBadge">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- Toggle: Follower / Following Ratio -->
+        <div class="setting-item">
+          <div class="setting-info">
+            <label for="showRatio" class="setting-label">Follower / Following Ratio</label>
+            <p class="setting-desc">Displays influence ratio (e.g. 🎯 14.5x) to spot authentic authority accounts.</p>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="showRatio">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- Toggle: New Account Warning -->
+        <div class="setting-item">
+          <div class="setting-info">
+            <label for="showNewAccountWarning" class="setting-label">New Account Warning</label>
+            <p class="setting-desc">Flags accounts created in the last 30 days (🐣 New) to spot reply-guy burners.</p>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="showNewAccountWarning">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- Toggle: CRM Tags on Timeline -->
+        <div class="setting-item">
+          <div class="setting-info">
+            <label for="showCrmTags" class="setting-label">Display CRM Tags on Timeline</label>
+            <p class="setting-desc">Shows your custom user tags (e.g. [Founder], [VC], [Dev]) directly on tweets.</p>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="showCrmTags">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- Dim Low-Follower Accounts -->
+        <div class="setting-item setting-item--stacked">
+          <div class="setting-row">
+            <div class="setting-info">
+              <label for="dimLowFollowers" class="setting-label">Dim Low-Follower Tweets</label>
+              <p class="setting-desc">Dims posts from accounts with fewer than specified followers.</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="dimLowFollowers">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="dimmer-subcontrols" id="dimmerSubcontrols">
+            <div class="threshold-row">
+              <span class="threshold-label">Dim accounts with under:</span>
+              <div class="threshold-input-wrap">
+                <input type="number" id="minFollowerThreshold" min="1" max="10000" step="5" value="50">
+                <span class="threshold-unit">followers</span>
+              </div>
+            </div>
+            <div class="threshold-row">
+              <div class="slider-label-group">
+                <span class="threshold-label">Dimmed Opacity:</span>
+                <span class="dim-opacity-val" id="dimOpacityVal">25%</span>
+              </div>
+              <input type="range" id="dimOpacity" class="range-slider" min="0" max="80" step="5" value="25">
+            </div>
+            <div class="threshold-row threshold-row--toggle">
+              <span class="threshold-label">Restore opacity on hover:</span>
+              <label class="switch switch--sm">
+                <input type="checkbox" id="undimOnHover">
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
       </div>
     </main>
 
-    <!-- Stats & Maintenance -->
-    <section class="stats-section">
-      <div class="stat-row">
-        <span class="stat-label">Cached Profiles</span>
-        <span class="stat-value" id="cachedCount">0</span>
+    <!-- Tab 2: CRM Directory -->
+    <main class="tab-pane" id="pane-crm">
+      <div class="crm-toolbar">
+        <input type="text" id="crmSearchInput" class="crm-search-input" placeholder="Search by @handle or tag...">
+        <div class="crm-export-actions">
+          <button id="exportCsvBtn" class="btn-action" title="Export as CSV">CSV</button>
+          <button id="exportJsonBtn" class="btn-action" title="Export as JSON">JSON</button>
+        </div>
       </div>
-      <button id="clearCacheBtn" class="btn-secondary" type="button">Clear Cache</button>
-    </section>
+
+      <div class="crm-user-list" id="crmUserList">
+        <!-- Rendered dynamically -->
+      </div>
+    </main>
+
+    <!-- Tab 3: Engine & Maintenance -->
+    <main class="tab-pane" id="pane-engine">
+      <div class="engine-card">
+        <div class="engine-row">
+          <span class="engine-label">Zero-Network Interceptor</span>
+          <span class="badge-success">⚡ Active (0ms Latency)</span>
+        </div>
+        <p class="engine-desc">Sniffs timeline responses in real-time. Zero rate limits, zero extra network bandwidth.</p>
+      </div>
+
+      <div class="engine-card">
+        <div class="engine-row">
+          <span class="engine-label">Active GraphQL Query ID</span>
+          <span class="engine-mono" id="queryIdDisplay">Auto-Detecting...</span>
+        </div>
+        <p class="engine-desc">Auto-updates from live X web app traffic to prevent stale hash breakage.</p>
+      </div>
+
+      <section class="stats-section">
+        <div class="stat-row">
+          <span class="stat-label">Cached Profile Snapshots</span>
+          <span class="stat-value" id="cachedCount">0</span>
+        </div>
+        <button id="clearCacheBtn" class="btn-secondary" type="button">Clear Cache</button>
+      </section>
+
+      <div class="danger-zone">
+        <button id="clearCrmBtn" class="btn-danger" type="button">Clear All CRM Tags & Notes</button>
+      </div>
+    </main>
 
     <!-- Footer -->
     <footer class="footer">

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "X Follower Tracker & Enhancer",
-  "version": "1.1.0",
-  "description": "Shows author follower counts and automatically expands 'Show more' posts across your X (Twitter) timeline.",
+  "version": "2.0.2",
+  "description": "Shows author follower badges, trust signals, custom CRM tags & notes, and auto-expands 'Show more' posts on X (Twitter).",
   "permissions": ["storage"],
   "host_permissions": [
     "https://x.com/*",
@@ -10,7 +10,7 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "X Follower Tracker Settings",
+    "default_title": "X Follower Tracker v2.0.2",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
@@ -28,9 +28,27 @@
         "https://x.com/*",
         "https://twitter.com/*"
       ],
+      "js": ["interceptor.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": [
+        "https://x.com/*",
+        "https://twitter.com/*"
+      ],
       "js": ["content.js"],
       "css": ["styles.css"],
-      "run_at": "document_idle"
+      "run_at": "document_start"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["interceptor.js"],
+      "matches": [
+        "https://x.com/*",
+        "https://twitter.com/*"
+      ]
     }
   ]
 }

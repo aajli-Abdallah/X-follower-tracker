@@ -1,27 +1,450 @@
+/* X Follower Tracker & Enhancer - v2.0.0 Stylesheet */
+
+/* --- Follower Badges & Quality Indicators --- */
+.xfb-badge-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  vertical-align: middle;
+  margin-left: 6px;
+  user-select: none;
+}
+
 .xfb-badge {
   display: inline-flex;
   align-items: center;
-  margin-left: 6px;
+  gap: 3px;
   padding: 1px 7px;
   font-size: 11px;
   line-height: 16px;
   font-weight: 600;
   border-radius: 9999px;
-  background: rgba(29, 155, 240, 0.12);
-  color: rgb(29, 155, 240);
+  background: rgba(29, 155, 240, 0.14);
+  color: #1d9bf0;
   white-space: nowrap;
   vertical-align: middle;
-  user-select: none;
-  transition: opacity 0.2s ease-in-out, background-color 0.2s ease-in-out;
-  cursor: default;
+  transition: all 0.18s ease-in-out;
+  cursor: pointer;
+  border: 1px solid rgba(29, 155, 240, 0.25);
+}
+
+.xfb-badge:hover {
+  background: rgba(29, 155, 240, 0.28);
+  border-color: rgba(29, 155, 240, 0.6);
+  transform: translateY(-0.5px);
+  box-shadow: 0 2px 6px rgba(29, 155, 240, 0.2);
 }
 
 .xfb-badge--error {
-  background: rgba(120, 120, 120, 0.12);
-  color: rgb(120, 120, 120);
+  background: rgba(120, 120, 120, 0.14);
+  color: #71767b;
+  border-color: rgba(120, 120, 120, 0.25);
+  cursor: default;
 }
 
-/* When author follower badges are toggled off */
-html.xfb-hide-badges .xfb-badge {
+/* Ratio Pill */
+.xfb-ratio-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  font-size: 10px;
+  line-height: 15px;
+  font-weight: 600;
+  border-radius: 9999px;
+  background: rgba(0, 186, 124, 0.12);
+  color: #00ba7c;
+  border: 1px solid rgba(0, 186, 124, 0.25);
+  white-space: nowrap;
+}
+
+/* New Account Warning */
+.xfb-badge--new-account {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  font-size: 10px;
+  line-height: 15px;
+  font-weight: 600;
+  border-radius: 9999px;
+  background: rgba(244, 93, 34, 0.14);
+  color: #f45d22;
+  border: 1px solid rgba(244, 93, 34, 0.3);
+  white-space: nowrap;
+}
+
+/* --- CRM User Tags --- */
+.xfb-tag-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  font-size: 10px;
+  line-height: 15px;
+  font-weight: 700;
+  border-radius: 9999px;
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.xfb-tag-pill:hover {
+  transform: translateY(-0.5px);
+  filter: brightness(1.15);
+}
+
+/* Default / custom tag */
+.xfb-tag-pill {
+  background: rgba(0, 186, 124, 0.15);
+  color: #00ba7c;
+  border: 1px solid rgba(0, 186, 124, 0.35);
+}
+
+.xfb-tag--founder {
+  background: rgba(168, 85, 247, 0.18) !important;
+  color: #c084fc !important;
+  border: 1px solid rgba(168, 85, 247, 0.4) !important;
+}
+
+.xfb-tag--vc {
+  background: rgba(34, 197, 94, 0.18) !important;
+  color: #4ade80 !important;
+  border: 1px solid rgba(34, 197, 94, 0.4) !important;
+}
+
+.xfb-tag--recruiter {
+  background: rgba(14, 165, 233, 0.18) !important;
+  color: #38bdf8 !important;
+  border: 1px solid rgba(14, 165, 233, 0.4) !important;
+}
+
+.xfb-tag--dev {
+  background: rgba(249, 115, 22, 0.18) !important;
+  color: #fb923c !important;
+  border: 1px solid rgba(249, 115, 22, 0.4) !important;
+}
+
+.xfb-tag--vip {
+  background: rgba(234, 179, 8, 0.18) !important;
+  color: #facc15 !important;
+  border: 1px solid rgba(234, 179, 8, 0.4) !important;
+}
+
+.xfb-tag--spam {
+  background: rgba(239, 68, 68, 0.18) !important;
+  color: #f87171 !important;
+  border: 1px solid rgba(239, 68, 68, 0.4) !important;
+}
+
+/* Has Notes Indicator dot */
+.xfb-notes-indicator {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #facc15;
+  margin-left: 2px;
+}
+
+/* --- Low Follower Dimmer --- */
+:root {
+  --xfb-dim-opacity: 0.25;
+}
+
+/* Match via child badge group (immune to React re-renders) and direct attributes */
+article:has(.xfb-badge-group[data-dimmed="true"]),
+article[data-xfb-dimmed="true"],
+article.xfb-dimmed-tweet {
+  opacity: var(--xfb-dim-opacity) !important;
+  transition: opacity 0.2s ease !important;
+}
+
+/* Ensure mouse hover maintains dim opacity by default */
+article:has(.xfb-badge-group[data-dimmed="true"]):hover,
+article[data-xfb-dimmed="true"]:hover,
+article.xfb-dimmed-tweet:hover {
+  opacity: var(--xfb-dim-opacity) !important;
+}
+
+/* Only restore full opacity on hover if user explicitly enabled undimOnHover */
+html.xfb-undim-on-hover article:has(.xfb-badge-group[data-dimmed="true"]):hover,
+html.xfb-undim-on-hover article[data-xfb-dimmed="true"]:hover,
+html.xfb-undim-on-hover article.xfb-dimmed-tweet:hover {
+  opacity: 1 !important;
+}
+
+
+
+/* --- Interactive Popover / Hover Card --- */
+.xfb-popover {
+  position: absolute;
+  z-index: 999999;
+  width: 320px;
+  background: #0f141c;
+  border: 1px solid #2f3336;
+  border-radius: 14px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  color: #e7e9ea;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  padding: 14px;
+  box-sizing: border-box;
+  user-select: text;
+  animation: xfbFadeIn 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes xfbFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.xfb-popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.xfb-popover-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.xfb-popover-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #272c30;
+  object-fit: cover;
+}
+
+.xfb-popover-names {
+  line-height: 1.25;
+}
+
+.xfb-popover-fullname {
+  font-weight: 700;
+  color: #f7f9f9;
+  font-size: 14px;
+}
+
+.xfb-popover-handle {
+  color: #71767b;
+  font-size: 12px;
+}
+
+.xfb-popover-close {
+  background: transparent;
+  border: none;
+  color: #71767b;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.xfb-popover-close:hover {
+  background: #272c30;
+  color: #eff3f4;
+}
+
+/* Metrics Row */
+.xfb-metrics-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  background: #161a22;
+  border: 1px solid #242830;
+  border-radius: 10px;
+  padding: 8px 10px;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.xfb-metric-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.xfb-metric-value {
+  font-weight: 700;
+  font-size: 13px;
+  color: #f7f9f9;
+}
+
+.xfb-metric-label {
+  font-size: 10px;
+  color: #71767b;
+  text-transform: uppercase;
+  margin-top: 1px;
+}
+
+/* Joined Info */
+.xfb-joined-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #8b98a5;
+  margin-bottom: 12px;
+  padding-left: 2px;
+}
+
+/* Tags Section */
+.xfb-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #8b98a5;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-bottom: 6px;
+}
+
+.xfb-active-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 8px;
+  min-height: 22px;
+}
+
+.xfb-active-tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 9999px;
+  background: #1d9bf026;
+  color: #1d9bf0;
+  border: 1px solid #1d9bf04d;
+}
+
+.xfb-tag-remove-btn {
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 2px;
+  opacity: 0.7;
+}
+
+.xfb-tag-remove-btn:hover {
+  opacity: 1;
+}
+
+.xfb-preset-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.xfb-preset-btn {
+  background: #1b2028;
+  border: 1px solid #2f3540;
+  color: #8b98a5;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 7px;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.xfb-preset-btn:hover {
+  background: #252c38;
+  color: #eff3f4;
+  border-color: #4b5563;
+}
+
+.xfb-custom-tag-form {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.xfb-custom-tag-input {
+  flex: 1;
+  background: #161a22;
+  border: 1px solid #2a303c;
+  color: #f7f9f9;
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  outline: none;
+}
+
+.xfb-custom-tag-input:focus {
+  border-color: #1d9bf0;
+}
+
+.xfb-custom-tag-btn {
+  background: #1d9bf0;
+  border: none;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.xfb-custom-tag-btn:hover {
+  background: #1a8cd8;
+}
+
+/* Notes Section */
+.xfb-notes-textarea {
+  width: 100%;
+  height: 54px;
+  background: #161a22;
+  border: 1px solid #2a303c;
+  color: #f7f9f9;
+  font-family: inherit;
+  font-size: 12px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  resize: none;
+  box-sizing: border-box;
+  outline: none;
+  margin-bottom: 4px;
+}
+
+.xfb-notes-textarea:focus {
+  border-color: #1d9bf0;
+}
+
+.xfb-notes-status {
+  font-size: 10px;
+  color: #00ba7c;
+  text-align: right;
+  min-height: 14px;
+}
+
+/* Visibility Toggles */
+html.xfb-hide-badges .xfb-badge-group {
+  display: none !important;
+}
+
+html.xfb-hide-ratio .xfb-ratio-pill {
+  display: none !important;
+}
+
+html.xfb-hide-new-account .xfb-badge--new-account {
+  display: none !important;
+}
+
+html.xfb-hide-tags .xfb-tag-pill {
   display: none !important;
 }

@@ -1,26 +1,33 @@
-# X Follower Tracker & Enhancer
+# X Follower Tracker & Enhancer (v2.0.2)
 
-Adds author follower badges (e.g. `?? 12.3K`) next to timestamps and automatically expands "Show more" posts across your X (Twitter) timeline.
+A powerful, lightweight Chromium extension (Manifest V3) that enriches your X (Twitter) experience with real-time author follower badges, trust & quality signals, inline CRM tagging & private notes, and automatic "Show more" post expansion.
 
-## Features & Options (v1.1.0)
+## 🚀 What's New in v2.0.2
 
-- **Auto-Expand "Show more"**: Automatically unfolds long-form posts on your timeline.
-- **Author Follower Badges**: Shows each author's follower count directly next to post timestamps.
-- **Extension Popup**: Click the extension icon to toggle settings or clear cache. Changes sync immediately to all open tabs.
+- 🔒 **Permanent Dimmer Lock on Hover**:
+  - Fixed Twitter's React component re-renders that previously stripped the dimmed class when hovering.
+  - Implemented CSS `:has(.xfb-badge-group[data-dimmed="true"])` selector targeting child badge elements that React cannot wipe.
+  - Locked `:hover` opacity directly to `--xfb-dim-opacity` so low-follower posts strictly stay dimmed.
+  - Slider range now extends all the way down to `0%` for complete post hiding.
+- 🎛️ **Enhanced Dimmer Controls**:
+  - **Customizable Dimmed Opacity**: Slider to adjust opacity from 0% to 80% (default: 25%).
+  - **Optional Hover Restore**: Dedicated toggle if you ever want hover to restore full opacity.
+- ⚡ **React Fiber Extraction Engine**: Instant 0ms badge rendering directly from DOM React components with zero network requests.
 
-## Install (unpacked, for development/personal use)
+## 🛠️ Installation (Developer Mode)
 
-1. Open `chrome://extensions` in Chrome.
-2. Turn on **Developer mode** (top right).
-3. Click **Load unpacked** and select the `x-follower-badge` folder.
-4. Open `x.com` (make sure you're logged in) and scroll your feed.
+1. Open `chrome://extensions` (or `edge://extensions`, `brave://extensions`).
+2. Turn on **Developer mode** in the top-right corner.
+3. Click **Load unpacked** and select this `x-follower-badge` directory.
+4. Open [x.com](https://x.com) (make sure you are logged in).
 
-## Files
+## 📁 Architecture Files
 
-- `manifest.json` ? extension config (Manifest V3)
-- `content.js` ? finds tweets, auto-expands "Show more", resolves follower counts, injects badges
-- `popup.html` ? settings popup UI
-- `popup.css` ? popup styling
-- `popup.js` ? popup interaction & storage sync
-- `styles.css` ? badge styling
-- `icons/` ? extension icons
+- `manifest.json` — Manifest V3 configuration, permissions, and MAIN-world content scripts.
+- `interceptor.js` — Zero-network payload sniffer running in MAIN world (page context).
+- `content.js` — DOM observer, badge injector, CRM manager, and hover card engine.
+- `popup.html` — Tabbed settings UI (Settings, CRM Directory, Engine status).
+- `popup.css` — Modern GitHub/Twitter dark theme styling.
+- `popup.js` — Popup controller, search filter, export handlers, and live storage sync.
+- `styles.css` — Badge pills, tag badges, hover card, and dimmer styles.
+- `icons/` — Pixel-perfect 16px, 48px, and 128px extension icons.
