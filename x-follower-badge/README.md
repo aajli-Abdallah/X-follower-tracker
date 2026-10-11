@@ -1,6 +1,12 @@
-# X Follower Tracker & Enhancer (v2.0.2)
+# X Follower Tracker & Enhancer (v2.0.3)
 
-A powerful, lightweight Chromium extension (Manifest V3) that enriches your X (Twitter) experience with real-time author follower badges, trust & quality signals, inline CRM tagging & private notes, and automatic "Show more" post expansion.
+A powerful, lightweight Chromium extension (Manifest V3) that enriches your X (Twitter) experience with real-time author follower badges, trust & quality signals, inline CRM tagging & private notes, video speed power suite, and automatic "Show more" post expansion.
+
+## 🚀 What's New in v2.0.3
+
+- 🎬 **Video Speed Controller**: Floating on-video overlay with speed stepping (0.25x–4.0x), custom presets, ±5s seek jumps, Picture-in-Picture, frame screenshots (PNG), and audio boost up to 300%.
+- 🎛️ **Dedicated Video Settings Tab**: Configure presets, overlay position, compact pill mode, and audio boost from the popup dashboard.
+- ⚡ **Auto-Hide & Subtitle Safe**: Overlays fade out cleanly when idle and avoid tiny preview avatars.
 
 ## 🚀 What's New in v2.0.2
 

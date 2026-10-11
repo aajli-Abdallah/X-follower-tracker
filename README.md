@@ -41,10 +41,18 @@ Available on the [Chrome Web Store](https://chromewebstore.google.com/detail/x-f
 
 ### 🔍 5. Feed Filtering & Low-Follower Dimmer
 - Dim or de-emphasize low-follower accounts (e.g., < 50 followers) with an adjustable threshold in settings.
-- Restores full opacity on hover so you never miss context.
+- Restores full opacity on hover so you never miss context (configurable).
 
 ### 📖 6. Auto-Expand "Show more"
 - Automatically unfolds long posts across your timeline so you never have to click "Show more" again.
+
+### 🎬 7. Video Speed Controller & Power Tools (v2.0.3)
+- Floating on-video overlay with speed controls (**0.25x – 4.0x**), presets, and `−0.1x` / `+0.1x` steppers.
+- **Quick Seek (±5s)** rewind and forward buttons.
+- **Picture-in-Picture (PiP)** and high-resolution **Frame Screenshot (PNG)** capture.
+- **Audio Volume Booster (up to 300%)** via Web Audio API.
+- **Auto-Hide** on idle to prevent obstructing subtitles.
+- Dedicated **Video** settings tab in the popup dashboard.
 
 ---
 
