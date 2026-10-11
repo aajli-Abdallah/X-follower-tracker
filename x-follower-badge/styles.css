@@ -1,4 +1,4 @@
-/* X Follower Tracker & Enhancer - v2.0.0 Stylesheet */
+/* X Follower Tracker & Enhancer - v2.0.3 Stylesheet */
 
 /* --- Follower Badges & Quality Indicators --- */
 .xfb-badge-group {
@@ -447,4 +447,221 @@ html.xfb-hide-new-account .xfb-badge--new-account {
 
 html.xfb-hide-tags .xfb-tag-pill {
   display: none !important;
+}
+
+/* ============================================================ */
+/* --- X Video Speed Controller Overlay (v2.0.3) --- */
+/* ============================================================ */
+
+.xvs-overlay {
+  position: fixed;
+  z-index: 2147483640;
+  pointer-events: none;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+.xvs-overlay.xvs-autohide {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.xvs-overlay.xvs-visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.xvs-panel {
+  position: absolute;
+  pointer-events: auto;
+  user-select: none;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 12px;
+  line-height: 1;
+  border-radius: 20px;
+  background: rgba(15, 20, 25, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  padding: 3px;
+  gap: 3px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Position variants */
+.xvs-panel.xvs-pos-top-right    { top: 10px; right: 10px; }
+.xvs-panel.xvs-pos-top-left     { top: 10px; left: 10px; }
+.xvs-panel.xvs-pos-bottom-right { bottom: 50px; right: 10px; }
+.xvs-panel.xvs-pos-bottom-left  { bottom: 50px; left: 10px; }
+
+/* Speed preset / step buttons */
+.xvs-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f0f2f5;
+  border: none;
+  border-radius: 14px;
+  font-size: 11.5px;
+  font-weight: 500;
+  padding: 5px 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  box-sizing: border-box;
+  transition: background 0.15s ease, transform 0.1s ease, color 0.15s ease;
+}
+
+.xvs-btn:hover {
+  background: rgba(255, 255, 255, 0.24);
+  color: #ffffff;
+}
+
+.xvs-btn:active {
+  transform: scale(0.92);
+}
+
+.xvs-btn.xvs-active {
+  background: #1d9bf0;
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: 0 0 10px rgba(29, 155, 240, 0.45);
+}
+
+.xvs-step-btn {
+  font-size: 13px;
+  font-weight: 700;
+  width: 24px;
+  padding: 0;
+  color: #e7e9ea;
+}
+
+/* Divider */
+.xvs-divider {
+  width: 1px;
+  height: 14px;
+  background: rgba(255, 255, 255, 0.15);
+  margin: 0 1px;
+}
+
+/* Compact Pill Mode */
+.xvs-panel.xvs-compact {
+  padding: 3px 6px;
+}
+
+.xvs-panel.xvs-compact .xvs-pill-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  cursor: pointer;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.xvs-panel.xvs-compact .xvs-pill-badge svg {
+  width: 12px;
+  height: 12px;
+  fill: #1d9bf0;
+}
+
+.xvs-panel.xvs-compact .xvs-controls-tray {
+  display: none;
+  align-items: center;
+  gap: 3px;
+}
+
+/* Show controls on hover OR when explicitly expanded via click */
+.xvs-panel.xvs-compact:hover .xvs-controls-tray,
+.xvs-panel.xvs-compact.xvs-expanded .xvs-controls-tray {
+  display: flex;
+}
+
+.xvs-panel.xvs-compact:hover .xvs-pill-badge,
+.xvs-panel.xvs-compact.xvs-expanded .xvs-pill-badge {
+  display: none;
+}
+
+/* Full expanded mode (non-compact): always show tray, hide pill */
+.xvs-panel:not(.xvs-compact) .xvs-pill-badge {
+  display: none;
+}
+
+.xvs-panel:not(.xvs-compact) .xvs-controls-tray {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+/* Utility Buttons (seek, PiP, screenshot, audio) */
+.xvs-util-btn {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e7e9ea;
+  border: none;
+  border-radius: 14px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 24px;
+  box-sizing: border-box;
+  transition: all 0.15s ease;
+}
+
+.xvs-util-btn:hover {
+  background: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+}
+
+.xvs-util-btn:active {
+  transform: scale(0.92);
+}
+
+.xvs-util-btn svg {
+  width: 13px;
+  height: 13px;
+  fill: currentColor;
+}
+
+.xvs-util-btn.xvs-audio-active {
+  background: rgba(29, 155, 240, 0.22);
+  color: #1d9bf0;
+  border: 1px solid rgba(29, 155, 240, 0.4);
+}
+
+/* Toast notification */
+.xvs-toast {
+  position: absolute;
+  top: 36px;
+  right: 0;
+  background: rgba(15, 20, 25, 0.94);
+  color: #e7e9ea;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  pointer-events: none;
+  white-space: nowrap;
+  animation: xvsFadeInOut 2.5s forwards;
+  z-index: 10;
+}
+
+@keyframes xvsFadeInOut {
+  0%   { opacity: 0; transform: translateY(-6px); }
+  15%  { opacity: 1; transform: translateY(0); }
+  85%  { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-6px); }
 }

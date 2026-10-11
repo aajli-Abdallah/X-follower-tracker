@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>X Follower Tracker & Enhancer v2.0.0</title>
+  <title>X Follower Tracker & Enhancer v2.0.3</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
@@ -16,7 +16,7 @@
         </div>
         <div class="title-wrap">
           <h1 class="title">X Tracker</h1>
-          <span class="version-tag">v2.0.2</span>
+          <span class="version-tag">v2.0.3</span>
         </div>
       </div>
       <div class="header-status">
@@ -29,6 +29,9 @@
     <nav class="tabs-nav">
       <button class="tab-btn active" data-tab="settings">
         <span class="tab-icon">⚙️</span> Settings
+      </button>
+      <button class="tab-btn" data-tab="video">
+        <span class="tab-icon">▶️</span> Video
       </button>
       <button class="tab-btn" data-tab="crm">
         <span class="tab-icon">🏷️</span> CRM & Notes <span class="tab-badge" id="crmCountBadge">0</span>
@@ -140,7 +143,140 @@
       </div>
     </main>
 
-    <!-- Tab 2: CRM Directory -->
+    <!-- Tab 2: Video Speed Controller -->
+    <main class="tab-pane" id="pane-video">
+      <div class="settings-list">
+
+        <!-- Master Toggle -->
+        <div class="setting-item">
+          <div class="setting-info">
+            <label for="videoSpeedEnabled" class="setting-label">Video Speed Controller</label>
+            <p class="setting-desc">Enable the floating overlay on all X videos with speed, seek, PiP, and audio controls.</p>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="videoSpeedEnabled">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- Speed Presets -->
+        <div class="setting-item setting-item--stacked">
+          <div class="setting-row">
+            <div class="setting-info">
+              <label class="setting-label">Speed Presets</label>
+              <p class="setting-desc">Comma-separated preset speeds shown in the overlay (e.g. 0.5, 0.75, 1, 1.25, 1.5, 2).</p>
+            </div>
+          </div>
+          <div class="dimmer-subcontrols" style="display:block;">
+            <div class="threshold-row">
+              <input type="text" id="videoPresets" class="crm-search-input" style="font-size:12px;padding:6px 10px;" placeholder="0.5, 0.75, 1, 1.25, 1.5, 2">
+            </div>
+          </div>
+        </div>
+
+        <!-- UI Mode -->
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label">Compact Pill Mode</label>
+            <p class="setting-desc">Shows a minimal speed pill that expands on hover/click. Disable for always-visible full controls bar.</p>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="videoUiMode">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- Auto-Hide -->
+        <div class="setting-item">
+          <div class="setting-info">
+            <label for="videoAutoHide" class="setting-label">Auto-Hide Controls</label>
+            <p class="setting-desc">Fade out the overlay after 2s of inactivity so it never covers subtitles.</p>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="videoAutoHide">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- Overlay Position -->
+        <div class="setting-item setting-item--stacked">
+          <div class="setting-row">
+            <div class="setting-info">
+              <label class="setting-label">Overlay Position</label>
+              <p class="setting-desc">Where the speed pill docks on the video.</p>
+            </div>
+          </div>
+          <div class="dimmer-subcontrols" style="display:block;">
+            <div class="threshold-row">
+              <select id="videoPosition" style="background:#1a1a2e;color:#e7e9ea;border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:5px 10px;font-size:12px;width:100%;">
+                <option value="top-right">Top Right</option>
+                <option value="top-left">Top Left</option>
+                <option value="bottom-right">Bottom Right</option>
+                <option value="bottom-left">Bottom Left</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Seek Buttons -->
+        <div class="setting-item">
+          <div class="setting-info">
+            <label for="videoShowSeekButtons" class="setting-label">Show Seek Buttons (±5s)</label>
+            <p class="setting-desc">Show rewind/forward 5-second jump buttons in the overlay.</p>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="videoShowSeekButtons">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- PiP Button -->
+        <div class="setting-item">
+          <div class="setting-info">
+            <label for="videoShowPipButton" class="setting-label">Show Picture-in-Picture Button</label>
+            <p class="setting-desc">Float any X video in a detachable mini-player overlay.</p>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="videoShowPipButton">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- Screenshot Button -->
+        <div class="setting-item">
+          <div class="setting-info">
+            <label for="videoShowScreenshotButton" class="setting-label">Show Screenshot Button</label>
+            <p class="setting-desc">Capture & download the current video frame at full native resolution.</p>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="videoShowScreenshotButton">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- Audio Boost -->
+        <div class="setting-item setting-item--stacked">
+          <div class="setting-row">
+            <div class="setting-info">
+              <label class="setting-label">Audio Boost</label>
+              <p class="setting-desc">Amplify video volume using Web Audio API (100% = normal, up to 300%).</p>
+            </div>
+          </div>
+          <div class="dimmer-subcontrols" style="display:block;">
+            <div class="threshold-row">
+              <div class="slider-label-group">
+                <span class="threshold-label">Boost Level:</span>
+                <span class="dim-opacity-val" id="videoAudioBoostVal">100%</span>
+              </div>
+              <input type="range" id="videoAudioBoost" class="range-slider" min="100" max="300" step="50" value="100">
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+    <!-- Tab 3: CRM Directory -->
     <main class="tab-pane" id="pane-crm">
       <div class="crm-toolbar">
         <input type="text" id="crmSearchInput" class="crm-search-input" placeholder="Search by @handle or tag...">

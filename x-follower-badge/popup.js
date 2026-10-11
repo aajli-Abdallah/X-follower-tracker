@@ -1,4 +1,4 @@
-// X Follower Tracker & Enhancer - Popup Controller v2.0.2
+// X Follower Tracker & Enhancer - Popup Controller v2.0.3
 
 const DEFAULTS = {
   autoExpandShowMore: true,
@@ -10,6 +10,17 @@ const DEFAULTS = {
   minFollowerThreshold: 50,
   dimOpacity: 25,
   undimOnHover: false,
+  // Video Speed Controller
+  videoSpeedEnabled: true,
+  videoPreferredSpeed: 1,
+  videoPresets: [0.5, 0.75, 1, 1.25, 1.5, 2],
+  videoAutoHide: true,
+  videoPosition: 'top-right',
+  videoUiMode: 'compact',
+  videoShowSeekButtons: true,
+  videoShowPipButton: true,
+  videoShowScreenshotButton: true,
+  videoAudioBoost: 100,
 };
 
 // DOM Elements - Settings
@@ -41,6 +52,18 @@ const queryIdDisplay = document.getElementById("queryIdDisplay");
 const cachedCountEl = document.getElementById("cachedCount");
 const clearCacheBtn = document.getElementById("clearCacheBtn");
 const clearCrmBtn = document.getElementById("clearCrmBtn");
+
+// DOM Elements - Video Speed
+const videoSpeedEnabledToggle = document.getElementById("videoSpeedEnabled");
+const videoPresetsInput = document.getElementById("videoPresets");
+const videoUiModeToggle = document.getElementById("videoUiMode");
+const videoAutoHideToggle = document.getElementById("videoAutoHide");
+const videoPositionSelect = document.getElementById("videoPosition");
+const videoShowSeekToggle = document.getElementById("videoShowSeekButtons");
+const videoShowPipToggle = document.getElementById("videoShowPipButton");
+const videoShowShotToggle = document.getElementById("videoShowScreenshotButton");
+const videoAudioBoostInput = document.getElementById("videoAudioBoost");
+const videoAudioBoostVal = document.getElementById("videoAudioBoostVal");
 
 let activeCrmData = {};
 
@@ -80,6 +103,15 @@ async function loadSettings() {
       "dimOpacity",
       "undimOnHover",
       "customQueryId",
+      "videoSpeedEnabled",
+      "videoPresets",
+      "videoAutoHide",
+      "videoPosition",
+      "videoUiMode",
+      "videoShowSeekButtons",
+      "videoShowPipButton",
+      "videoShowScreenshotButton",
+      "videoAudioBoost",
     ]);
 
     autoExpandToggle.checked = stored.autoExpandShowMore !== undefined ? stored.autoExpandShowMore : DEFAULTS.autoExpandShowMore;
@@ -105,6 +137,23 @@ async function loadSettings() {
     } else {
       queryIdDisplay.textContent = "G3KGOASz96M... (Default)";
     }
+
+    // Video Speed Settings
+    if (videoSpeedEnabledToggle) videoSpeedEnabledToggle.checked = stored.videoSpeedEnabled !== undefined ? stored.videoSpeedEnabled : DEFAULTS.videoSpeedEnabled;
+    if (videoPresetsInput) {
+      const presets = stored.videoPresets || DEFAULTS.videoPresets;
+      videoPresetsInput.value = Array.isArray(presets) ? presets.join(', ') : presets;
+    }
+    if (videoUiModeToggle) videoUiModeToggle.checked = (stored.videoUiMode !== undefined ? stored.videoUiMode : DEFAULTS.videoUiMode) === 'compact';
+    if (videoAutoHideToggle) videoAutoHideToggle.checked = stored.videoAutoHide !== undefined ? stored.videoAutoHide : DEFAULTS.videoAutoHide;
+    if (videoPositionSelect) videoPositionSelect.value = stored.videoPosition || DEFAULTS.videoPosition;
+    if (videoShowSeekToggle) videoShowSeekToggle.checked = stored.videoShowSeekButtons !== undefined ? stored.videoShowSeekButtons : DEFAULTS.videoShowSeekButtons;
+    if (videoShowPipToggle) videoShowPipToggle.checked = stored.videoShowPipButton !== undefined ? stored.videoShowPipButton : DEFAULTS.videoShowPipButton;
+    if (videoShowShotToggle) videoShowShotToggle.checked = stored.videoShowScreenshotButton !== undefined ? stored.videoShowScreenshotButton : DEFAULTS.videoShowScreenshotButton;
+    const boost = stored.videoAudioBoost !== undefined ? stored.videoAudioBoost : DEFAULTS.videoAudioBoost;
+    if (videoAudioBoostInput) videoAudioBoostInput.value = boost;
+    if (videoAudioBoostVal) videoAudioBoostVal.textContent = `${boost}%`;
+
   } catch (err) {
     console.error("Failed to load settings:", err);
   }
@@ -137,6 +186,44 @@ dimOpacityInput.addEventListener("input", () => {
 undimOnHoverToggle.addEventListener("change", () => {
   chrome.storage.local.set({ undimOnHover: undimOnHoverToggle.checked });
 });
+
+// --- Video Speed Event Listeners ---
+if (videoSpeedEnabledToggle) {
+  videoSpeedEnabledToggle.addEventListener("change", () => chrome.storage.local.set({ videoSpeedEnabled: videoSpeedEnabledToggle.checked }));
+}
+if (videoPresetsInput) {
+  videoPresetsInput.addEventListener("change", () => {
+    const presets = videoPresetsInput.value.split(',').map(s => parseFloat(s.trim())).filter(n => !isNaN(n) && n > 0);
+    if (presets.length > 0) {
+      chrome.storage.local.set({ videoPresets: presets });
+    }
+  });
+}
+if (videoUiModeToggle) {
+  videoUiModeToggle.addEventListener("change", () => chrome.storage.local.set({ videoUiMode: videoUiModeToggle.checked ? 'compact' : 'full' }));
+}
+if (videoAutoHideToggle) {
+  videoAutoHideToggle.addEventListener("change", () => chrome.storage.local.set({ videoAutoHide: videoAutoHideToggle.checked }));
+}
+if (videoPositionSelect) {
+  videoPositionSelect.addEventListener("change", () => chrome.storage.local.set({ videoPosition: videoPositionSelect.value }));
+}
+if (videoShowSeekToggle) {
+  videoShowSeekToggle.addEventListener("change", () => chrome.storage.local.set({ videoShowSeekButtons: videoShowSeekToggle.checked }));
+}
+if (videoShowPipToggle) {
+  videoShowPipToggle.addEventListener("change", () => chrome.storage.local.set({ videoShowPipButton: videoShowPipToggle.checked }));
+}
+if (videoShowShotToggle) {
+  videoShowShotToggle.addEventListener("change", () => chrome.storage.local.set({ videoShowScreenshotButton: videoShowShotToggle.checked }));
+}
+if (videoAudioBoostInput) {
+  videoAudioBoostInput.addEventListener("input", () => {
+    const val = parseInt(videoAudioBoostInput.value, 10);
+    if (videoAudioBoostVal) videoAudioBoostVal.textContent = `${val}%`;
+    chrome.storage.local.set({ videoAudioBoost: val });
+  });
+}
 
 // --- CRM Directory & Notes ---
 async function loadCrmData() {

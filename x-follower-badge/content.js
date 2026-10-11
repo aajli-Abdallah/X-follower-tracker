@@ -1,5 +1,5 @@
-// X Follower Tracker & Enhancer - Content Script v2.0.2
-// Features: Zero-Network Interceptor Bridge, CRM Tags & Notes, Trust Signals, Hover Card, Timeline Dimmer
+// X Follower Tracker & Enhancer - Content Script v2.0.3
+// Features: Zero-Network Interceptor Bridge, CRM Tags & Notes, Trust Signals, Hover Card, Timeline Dimmer, Video Speed Controller
 
 (() => {
   let liveQueryId = "G3KGOASz96M-Qu0nwmGXNg";
@@ -18,6 +18,17 @@
     minFollowerThreshold: 50,
     dimOpacity: 25,
     undimOnHover: false,
+    // Video Speed Controller
+    videoSpeedEnabled: true,
+    videoPreferredSpeed: 1,
+    videoPresets: [0.5, 0.75, 1, 1.25, 1.5, 2],
+    videoAutoHide: true,
+    videoPosition: 'top-right',
+    videoUiMode: 'compact',
+    videoShowSeekButtons: true,
+    videoShowPipButton: true,
+    videoShowScreenshotButton: true,
+    videoAudioBoost: 100,
   };
 
   const processedTweets = new WeakMap(); // article -> handle
@@ -144,6 +155,16 @@
         "dimOpacity",
         "undimOnHover",
         "customQueryId",
+        "videoSpeedEnabled",
+        "videoPreferredSpeed",
+        "videoPresets",
+        "videoAutoHide",
+        "videoPosition",
+        "videoUiMode",
+        "videoShowSeekButtons",
+        "videoShowPipButton",
+        "videoShowScreenshotButton",
+        "videoAudioBoost",
       ]);
       if (stored.autoExpandShowMore !== undefined) settings.autoExpandShowMore = Boolean(stored.autoExpandShowMore);
       if (stored.showFollowerBadge !== undefined) settings.showFollowerBadge = Boolean(stored.showFollowerBadge);
@@ -155,6 +176,17 @@
       if (stored.dimOpacity !== undefined) settings.dimOpacity = Number(stored.dimOpacity);
       if (stored.undimOnHover !== undefined) settings.undimOnHover = Boolean(stored.undimOnHover);
       if (stored.customQueryId) liveQueryId = stored.customQueryId;
+      // Video speed settings
+      if (stored.videoSpeedEnabled !== undefined) settings.videoSpeedEnabled = Boolean(stored.videoSpeedEnabled);
+      if (stored.videoPreferredSpeed !== undefined) settings.videoPreferredSpeed = Number(stored.videoPreferredSpeed);
+      if (stored.videoPresets !== undefined && Array.isArray(stored.videoPresets)) settings.videoPresets = stored.videoPresets;
+      if (stored.videoAutoHide !== undefined) settings.videoAutoHide = Boolean(stored.videoAutoHide);
+      if (stored.videoPosition !== undefined) settings.videoPosition = stored.videoPosition;
+      if (stored.videoUiMode !== undefined) settings.videoUiMode = stored.videoUiMode;
+      if (stored.videoShowSeekButtons !== undefined) settings.videoShowSeekButtons = Boolean(stored.videoShowSeekButtons);
+      if (stored.videoShowPipButton !== undefined) settings.videoShowPipButton = Boolean(stored.videoShowPipButton);
+      if (stored.videoShowScreenshotButton !== undefined) settings.videoShowScreenshotButton = Boolean(stored.videoShowScreenshotButton);
+      if (stored.videoAudioBoost !== undefined) settings.videoAudioBoost = Number(stored.videoAudioBoost);
     } catch (err) {
       log("Error loading settings:", err);
     }
@@ -163,6 +195,8 @@
       expandAllVisiblePosts();
     }
     applyDimmerToAll();
+    // Kick off video scanner after settings are ready
+    if (typeof xvsScanForVideos === 'function') xvsScanForVideos();
   }
 
   chrome.storage.onChanged.addListener((changes, area) => {
@@ -207,6 +241,21 @@
     }
     if (changes.customQueryId !== undefined) {
       liveQueryId = changes.customQueryId.newValue;
+    }
+    // Video speed settings live updates
+    const videoKeys = ['videoSpeedEnabled','videoPreferredSpeed','videoPresets','videoAutoHide','videoPosition','videoUiMode','videoShowSeekButtons','videoShowPipButton','videoShowScreenshotButton','videoAudioBoost'];
+    if (videoKeys.some(k => changes[k] !== undefined)) {
+      if (changes.videoSpeedEnabled !== undefined) settings.videoSpeedEnabled = Boolean(changes.videoSpeedEnabled.newValue);
+      if (changes.videoPreferredSpeed !== undefined) settings.videoPreferredSpeed = Number(changes.videoPreferredSpeed.newValue);
+      if (changes.videoPresets !== undefined) settings.videoPresets = changes.videoPresets.newValue;
+      if (changes.videoAutoHide !== undefined) settings.videoAutoHide = Boolean(changes.videoAutoHide.newValue);
+      if (changes.videoPosition !== undefined) settings.videoPosition = changes.videoPosition.newValue;
+      if (changes.videoUiMode !== undefined) settings.videoUiMode = changes.videoUiMode.newValue;
+      if (changes.videoShowSeekButtons !== undefined) settings.videoShowSeekButtons = Boolean(changes.videoShowSeekButtons.newValue);
+      if (changes.videoShowPipButton !== undefined) settings.videoShowPipButton = Boolean(changes.videoShowPipButton.newValue);
+      if (changes.videoShowScreenshotButton !== undefined) settings.videoShowScreenshotButton = Boolean(changes.videoShowScreenshotButton.newValue);
+      if (changes.videoAudioBoost !== undefined) settings.videoAudioBoost = Number(changes.videoAudioBoost.newValue);
+      if (typeof xvsUpdateAllFromSettings === 'function') xvsUpdateAllFromSettings();
     }
   });
 
@@ -893,6 +942,11 @@
           scan(node);
           tryExpandShowMore(node);
         }
+        // Also pick up any newly added video elements
+        if (typeof xvsScanForVideos === 'function') {
+          if (node.tagName === 'VIDEO') xvsTrackVideo(node);
+          else xvsScanForVideos(node);
+        }
       }
     }
   });
@@ -905,11 +959,406 @@
     });
   }
 
+  // ============================================================
+  // --- X VIDEO SPEED CONTROLLER (v2.0.3) ---
+  // ============================================================
+
+  const xvsTracked = new Map();    // videoEl -> entry
+  const xvsAudioNodes = new WeakMap(); // videoEl -> { ctx, gainNode }
+
+  function xvsFormatLabel(speed) {
+    const s = Number(speed);
+    return s === 1 ? '1x' : `${parseFloat(s.toFixed(2))}x`;
+  }
+
+  function xvsApplySpeed(video, entry, speed) {
+    const clamped = Math.max(0.25, Math.min(4.0, parseFloat(Number(speed).toFixed(2))));
+    entry.applyingSpeed = true;
+    try { video.playbackRate = clamped; } catch (e) {}
+    setTimeout(() => { entry.applyingSpeed = false; }, 50);
+    entry.currentSpeed = clamped;
+    if (entry.pillText) entry.pillText.textContent = xvsFormatLabel(clamped);
+    entry.presetButtons.forEach((btn, s) => {
+      btn.classList.toggle('xvs-active', Math.abs(s - clamped) < 0.01);
+    });
+  }
+
+  function xvsApplyAudioBoost(video, boostPercent) {
+    const boost = Math.max(100, Math.min(300, boostPercent || 100));
+    const gainValue = boost / 100;
+    let data = xvsAudioNodes.get(video);
+    if (!data) {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const source = ctx.createMediaElementSource(video);
+        const gainNode = ctx.createGain();
+        source.connect(gainNode);
+        gainNode.connect(ctx.destination);
+        data = { ctx, gainNode };
+        xvsAudioNodes.set(video, data);
+        const resume = () => { if (ctx.state === 'suspended') ctx.resume(); };
+        video.addEventListener('play', resume);
+        window.addEventListener('click', resume, { once: true });
+      } catch (e) { return; }
+    }
+    if (data && data.gainNode) {
+      try {
+        data.gainNode.gain.value = gainValue;
+        if (data.ctx.state === 'suspended') data.ctx.resume();
+      } catch (e) {}
+    }
+  }
+
+  async function xvsTogglePiP(video) {
+    try {
+      if (document.pictureInPictureElement === video) {
+        await document.exitPictureInPicture();
+      } else if (document.pictureInPictureEnabled) {
+        await video.requestPictureInPicture();
+      }
+    } catch (e) {}
+  }
+
+  function xvsCaptureScreenshot(video, panel) {
+    try {
+      const w = video.videoWidth || video.clientWidth || 1280;
+      const h = video.videoHeight || video.clientHeight || 720;
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(video, 0, 0, w, h);
+      canvas.toBlob(blob => {
+        if (!blob) { xvsShowToast(panel, '⚠️ Capture error'); return; }
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `x-frame-${Date.now()}.png`;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        xvsShowToast(panel, '📸 Frame saved!');
+      }, 'image/png');
+    } catch (e) { xvsShowToast(panel, '⚠️ Protected stream'); }
+  }
+
+  function xvsSeek(video, seconds) {
+    try {
+      video.currentTime = Math.max(0, Math.min(video.duration || Infinity, (video.currentTime || 0) + seconds));
+    } catch (e) {}
+  }
+
+  function xvsShowToast(panel, msg) {
+    const t = document.createElement('div');
+    t.className = 'xvs-toast';
+    t.textContent = msg;
+    panel.appendChild(t);
+    setTimeout(() => t.remove(), 2500);
+  }
+
+  function xvsRenderPresets(video, entry) {
+    entry.presetsContainer.innerHTML = '';
+    entry.presetButtons.clear();
+    const presets = settings.videoPresets || [0.5, 0.75, 1, 1.25, 1.5, 2];
+    presets.forEach(speed => {
+      const btn = document.createElement('button');
+      btn.className = 'xvs-btn';
+      btn.type = 'button';
+      btn.textContent = xvsFormatLabel(speed);
+      if (Math.abs(speed - entry.currentSpeed) < 0.01) btn.classList.add('xvs-active');
+      btn.addEventListener('click', e => {
+        e.preventDefault(); e.stopPropagation();
+        entry.userChosenSpeed = speed;
+        xvsApplySpeed(video, entry, speed);
+        chrome.storage.local.set({ videoPreferredSpeed: speed });
+      });
+      entry.presetsContainer.appendChild(btn);
+      entry.presetButtons.set(speed, btn);
+    });
+  }
+
+  function xvsTriggerAutoHide(entry) {
+    if (!settings.videoAutoHide) {
+      entry.overlay.classList.remove('xvs-autohide');
+      entry.overlay.classList.add('xvs-visible');
+      return;
+    }
+    entry.overlay.classList.remove('xvs-autohide');
+    entry.overlay.classList.add('xvs-visible');
+    clearTimeout(entry.hideTimeout);
+    entry.hideTimeout = setTimeout(() => {
+      if (!entry.isHovered) {
+        entry.overlay.classList.remove('xvs-visible');
+        entry.overlay.classList.add('xvs-autohide');
+      }
+    }, 2200);
+  }
+
+  function xvsCreateOverlay(video) {
+    const targetSpeed = settings.videoPreferredSpeed || 1;
+    const overlay = document.createElement('div');
+    overlay.className = `xvs-overlay ${settings.videoAutoHide ? 'xvs-autohide' : 'xvs-visible'}`;
+
+    const panel = document.createElement('div');
+    panel.className = `xvs-panel xvs-pos-${settings.videoPosition || 'top-right'} ${settings.videoUiMode === 'compact' ? 'xvs-compact' : ''}`;
+    overlay.appendChild(panel);
+
+    // Compact pill badge
+    const pillBadge = document.createElement('div');
+    pillBadge.className = 'xvs-pill-badge';
+    pillBadge.title = 'Click to toggle video controls';
+    pillBadge.innerHTML = `<svg viewBox="0 0 24 24"><path d="M13 2L3 14h8l-2 8 10-12h-8l2-8z"/></svg><span class="xvs-pill-text">${xvsFormatLabel(targetSpeed)}</span>`;
+    panel.appendChild(pillBadge);
+    const pillText = pillBadge.querySelector('.xvs-pill-text');
+    pillBadge.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); panel.classList.toggle('xvs-expanded'); });
+
+    // Controls tray
+    const controlsTray = document.createElement('div');
+    controlsTray.className = 'xvs-controls-tray';
+    panel.appendChild(controlsTray);
+
+    // − step button
+    const minusBtn = document.createElement('button');
+    minusBtn.className = 'xvs-btn xvs-step-btn';
+    minusBtn.type = 'button';
+    minusBtn.title = 'Decrease speed (−0.1x)';
+    minusBtn.textContent = '−';
+    minusBtn.addEventListener('click', e => {
+      e.preventDefault(); e.stopPropagation();
+      const next = Math.max(0.25, parseFloat((entry.currentSpeed - 0.1).toFixed(2)));
+      entry.userChosenSpeed = next;
+      xvsApplySpeed(video, entry, next);
+      chrome.storage.local.set({ videoPreferredSpeed: next });
+    });
+    controlsTray.appendChild(minusBtn);
+
+    // Presets container
+    const presetsContainer = document.createElement('div');
+    presetsContainer.style.cssText = 'display:flex;gap:3px;';
+    controlsTray.appendChild(presetsContainer);
+
+    // + step button
+    const plusBtn = document.createElement('button');
+    plusBtn.className = 'xvs-btn xvs-step-btn';
+    plusBtn.type = 'button';
+    plusBtn.title = 'Increase speed (+0.1x)';
+    plusBtn.textContent = '+';
+    plusBtn.addEventListener('click', e => {
+      e.preventDefault(); e.stopPropagation();
+      const next = Math.min(4.0, parseFloat((entry.currentSpeed + 0.1).toFixed(2)));
+      entry.userChosenSpeed = next;
+      xvsApplySpeed(video, entry, next);
+      chrome.storage.local.set({ videoPreferredSpeed: next });
+    });
+    controlsTray.appendChild(plusBtn);
+
+    // Seek tray
+    const seekTray = document.createElement('div');
+    seekTray.style.cssText = `display:${settings.videoShowSeekButtons ? 'flex' : 'none'};align-items:center;gap:3px;`;
+    const divSeek = document.createElement('div');
+    divSeek.className = 'xvs-divider';
+    seekTray.appendChild(divSeek);
+    const rewindBtn = document.createElement('button');
+    rewindBtn.className = 'xvs-util-btn';
+    rewindBtn.title = 'Rewind 5 seconds';
+    rewindBtn.textContent = '−5s';
+    rewindBtn.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); xvsSeek(video, -5); });
+    seekTray.appendChild(rewindBtn);
+    const fwdBtn = document.createElement('button');
+    fwdBtn.className = 'xvs-util-btn';
+    fwdBtn.title = 'Skip forward 5 seconds';
+    fwdBtn.textContent = '+5s';
+    fwdBtn.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); xvsSeek(video, 5); });
+    seekTray.appendChild(fwdBtn);
+    controlsTray.appendChild(seekTray);
+
+    // Pro tools tray
+    const toolsTray = document.createElement('div');
+    toolsTray.style.cssText = 'display:flex;align-items:center;gap:3px;';
+    const divTools = document.createElement('div');
+    divTools.className = 'xvs-divider';
+    toolsTray.appendChild(divTools);
+
+    // PiP
+    const pipBtn = document.createElement('button');
+    pipBtn.className = 'xvs-util-btn';
+    pipBtn.title = 'Picture-in-Picture';
+    pipBtn.style.display = settings.videoShowPipButton ? 'inline-flex' : 'none';
+    pipBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M19 11h-8v6h8v-6zm4 8V4.98C23 3.88 22.1 3 21 3H3c-1.1 0-2 .88-2 1.98V19c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2zm-2 .02H3V4.97h18v14.05z"/></svg>`;
+    pipBtn.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); xvsTogglePiP(video); });
+    toolsTray.appendChild(pipBtn);
+
+    // Screenshot
+    const shotBtn = document.createElement('button');
+    shotBtn.className = 'xvs-util-btn';
+    shotBtn.title = 'Save frame screenshot';
+    shotBtn.style.display = settings.videoShowScreenshotButton ? 'inline-flex' : 'none';
+    shotBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M12 15c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm7-10h-3.17L14 3H10L8.17 5H5c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 14H5V7h3.88l1.83-2h4.58l1.83 2H19v12z"/></svg>`;
+    shotBtn.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); xvsCaptureScreenshot(video, panel); });
+    toolsTray.appendChild(shotBtn);
+
+    // Audio Boost
+    const audioBoost = settings.videoAudioBoost || 100;
+    const audioBtn = document.createElement('button');
+    audioBtn.className = `xvs-util-btn ${audioBoost > 100 ? 'xvs-audio-active' : ''}`;
+    audioBtn.title = 'Audio Boost (cycle: 100% → 150% → 200% → 300%)';
+    audioBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg><span class="xvs-audio-label">${audioBoost > 100 ? audioBoost + '%' : ''}</span>`;
+    audioBtn.addEventListener('click', e => {
+      e.preventDefault(); e.stopPropagation();
+      const levels = [100, 150, 200, 300];
+      const next = levels[(levels.indexOf(settings.videoAudioBoost || 100) + 1) % levels.length];
+      settings.videoAudioBoost = next;
+      chrome.storage.local.set({ videoAudioBoost: next });
+      xvsApplyAudioBoost(video, next);
+      xvsShowToast(panel, `🔊 Audio Boost: ${next}%`);
+      audioBtn.classList.toggle('xvs-audio-active', next > 100);
+      const lbl = audioBtn.querySelector('.xvs-audio-label');
+      if (lbl) lbl.textContent = next > 100 ? `${next}%` : '';
+    });
+    toolsTray.appendChild(audioBtn);
+    controlsTray.appendChild(toolsTray);
+
+    document.body.appendChild(overlay);
+
+    const entry = {
+      overlay, panel, pillBadge, pillText,
+      controlsTray, presetsContainer, seekTray,
+      pipBtn, shotBtn, audioBtn,
+      presetButtons: new Map(),
+      currentSpeed: targetSpeed,
+      userChosenSpeed: undefined,
+      inView: false, isHovered: false,
+      hideTimeout: null, applyingSpeed: false,
+    };
+
+    xvsRenderPresets(video, entry);
+
+    overlay.addEventListener('mouseenter', () => { entry.isHovered = true; xvsTriggerAutoHide(entry); });
+    overlay.addEventListener('mouseleave', () => { entry.isHovered = false; xvsTriggerAutoHide(entry); });
+    video.addEventListener('mousemove', () => xvsTriggerAutoHide(entry), { passive: true });
+    video.addEventListener('mouseenter', () => xvsTriggerAutoHide(entry), { passive: true });
+
+    return entry;
+  }
+
+  function xvsPositionOverlay(video, entry) {
+    if (!video.isConnected) { xvsCleanUp(video); return; }
+    if (!settings.videoSpeedEnabled || !entry.inView) { entry.overlay.style.display = 'none'; return; }
+    const rect = video.getBoundingClientRect();
+    const visible = rect.width > 60 && rect.height > 60 &&
+      rect.bottom > 0 && rect.right > 0 &&
+      rect.top < window.innerHeight && rect.left < window.innerWidth;
+    if (!visible) { entry.overlay.style.display = 'none'; return; }
+    entry.overlay.style.cssText = `display:block;top:${rect.top + window.scrollY}px;left:${rect.left + window.scrollX}px;width:${rect.width}px;height:${rect.height}px;`;
+  }
+
+  let xvsRepositionScheduled = false;
+  function xvsScheduleReposition() {
+    if (xvsRepositionScheduled) return;
+    xvsRepositionScheduled = true;
+    requestAnimationFrame(() => {
+      xvsRepositionScheduled = false;
+      xvsTracked.forEach((entry, video) => { if (entry.inView) xvsPositionOverlay(video, entry); });
+    });
+  }
+
+  const xvsIntersectionObs = new IntersectionObserver(entries => {
+    entries.forEach(change => {
+      const entry = xvsTracked.get(change.target);
+      if (entry) { entry.inView = change.isIntersecting; xvsPositionOverlay(change.target, entry); }
+    });
+  }, { threshold: [0, 0.1] });
+
+  const xvsResizeObs = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(entries => {
+    entries.forEach(change => { if (xvsTracked.get(change.target)?.inView) xvsScheduleReposition(); });
+  }) : null;
+
+  function xvsCleanUp(video) {
+    const entry = xvsTracked.get(video);
+    if (!entry) return;
+    try { xvsIntersectionObs.unobserve(video); xvsResizeObs?.unobserve(video); clearTimeout(entry.hideTimeout); entry.overlay.remove(); } catch (e) {}
+    xvsTracked.delete(video);
+  }
+
+  function xvsTrackVideo(video) {
+    if (xvsTracked.has(video) || !video.isConnected) return;
+    // Skip tiny thumbnails/avatars (must be at least 120x80 rendered)
+    const rect = video.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0 && (rect.width < 120 || rect.height < 80)) return;
+
+    const entry = xvsCreateOverlay(video);
+    xvsTracked.set(video, entry);
+    xvsIntersectionObs.observe(video);
+    xvsResizeObs?.observe(video);
+
+    video.addEventListener('play', () => {
+      if (settings.videoSpeedEnabled && !entry.applyingSpeed && Math.abs(video.playbackRate - entry.currentSpeed) > 0.01) {
+        video.playbackRate = entry.currentSpeed;
+      }
+      if ((settings.videoAudioBoost || 100) > 100) xvsApplyAudioBoost(video, settings.videoAudioBoost);
+    });
+    video.addEventListener('ratechange', () => {
+      if (settings.videoSpeedEnabled && !entry.applyingSpeed && Math.abs(video.playbackRate - entry.currentSpeed) > 0.01) {
+        video.playbackRate = entry.currentSpeed;
+      }
+    });
+    video.addEventListener('loadedmetadata', () => {
+      if (settings.videoSpeedEnabled) xvsApplySpeed(video, entry, entry.userChosenSpeed ?? settings.videoPreferredSpeed ?? 1);
+    });
+
+    if (settings.videoSpeedEnabled) {
+      xvsApplySpeed(video, entry, settings.videoPreferredSpeed || 1);
+      if ((settings.videoAudioBoost || 100) > 100) xvsApplyAudioBoost(video, settings.videoAudioBoost);
+    }
+    xvsPositionOverlay(video, entry);
+  }
+
+  function xvsScanForVideos(root = document) {
+    if (!root.querySelectorAll) return;
+    root.querySelectorAll('video').forEach(v => xvsTrackVideo(v));
+  }
+
+  function xvsUpdateAllFromSettings() {
+    xvsTracked.forEach((entry, video) => {
+      entry.panel.className = `xvs-panel xvs-pos-${settings.videoPosition || 'top-right'} ${settings.videoUiMode === 'compact' ? 'xvs-compact' : ''}`;
+      if (settings.videoAutoHide) {
+        entry.overlay.classList.add('xvs-autohide');
+        entry.overlay.classList.remove('xvs-visible');
+      } else {
+        entry.overlay.classList.remove('xvs-autohide');
+        entry.overlay.classList.add('xvs-visible');
+      }
+      if (entry.seekTray) entry.seekTray.style.display = settings.videoShowSeekButtons ? 'flex' : 'none';
+      if (entry.pipBtn) entry.pipBtn.style.display = settings.videoShowPipButton ? 'inline-flex' : 'none';
+      if (entry.shotBtn) entry.shotBtn.style.display = settings.videoShowScreenshotButton ? 'inline-flex' : 'none';
+      if (entry.audioBtn) {
+        const boost = settings.videoAudioBoost || 100;
+        entry.audioBtn.classList.toggle('xvs-audio-active', boost > 100);
+        const lbl = entry.audioBtn.querySelector('.xvs-audio-label');
+        if (lbl) lbl.textContent = boost > 100 ? `${boost}%` : '';
+      }
+      xvsRenderPresets(video, entry);
+      if (settings.videoSpeedEnabled) {
+        xvsApplySpeed(video, entry, entry.userChosenSpeed ?? settings.videoPreferredSpeed ?? 1);
+      }
+      xvsPositionOverlay(video, entry);
+    });
+  }
+
+  // Hook into loadSettings to also start video scanner once settings are ready
+  const _origLoadSettings = loadSettings;
+  // We call xvsScanForVideos after settings load completes — handled below in bootstrap.
+
+  window.addEventListener('scroll', xvsScheduleReposition, { passive: true });
+  window.addEventListener('resize', xvsScheduleReposition, { passive: true });
+  setInterval(xvsScanForVideos, 2500);
+
+  // ============================================================
   // --- Bootstrap ---
   ensureInterceptorInjected();
   loadSettings();
   loadCrmData();
   requestInterceptorSync();
+
   scan();
 
   // Retry sync after initial render

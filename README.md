@@ -1,7 +1,7 @@
 # X Follower Tracker & Enhancer (Chrome Extension) 👥⚡
 
 [![Manifest V3](https://img.shields.io/badge/Manifest-V3-brightgreen.svg)](x-follower-badge/manifest.json)
-[![Version](https://img.shields.io/badge/version-2.0.2-blue.svg)](x-follower-badge/manifest.json)
+[![Version](https://img.shields.io/badge/version-2.0.3-blue.svg)](x-follower-badge/manifest.json)
 [![Chrome Web Store](https://img.shields.io/badge/Chrome_Web_Store-Available-blue?logo=googlechrome)](https://chromewebstore.google.com/detail/x-follower-badge/ndhpilocfkkgojkbamejgngmmnfaljin)
 [![Browser Support](https://img.shields.io/badge/browsers-Chrome%20%7C%20Brave%20%7C%20Edge-orange.svg)](#installation)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -91,6 +91,20 @@ Install directly from the [Chrome Web Store](https://chromewebstore.google.com/d
 ---
 
 ## 🏷️ Release Notes
+
+### v2.0.3
+- **🎬 X Video Speed Controller**: Full video speed overlay ported and adapted from the FB Video Speed project:
+  - Compact pill badge (`⚡ 1.5x`) that expands on hover/click into full controls tray.
+  - Speed presets (0.5x, 0.75x, 1x, 1.25x, 1.5x, 2x) — fully customizable from the new **Video** popup tab.
+  - Fine `−0.1x` / `+0.1x` step buttons for granular control.
+  - **Quick Seek** ±5s jump buttons.
+  - **Picture-in-Picture** button to float any X video in a detachable mini-player.
+  - **Frame Screenshot** — download any video frame as a high-resolution PNG.
+  - **Audio Boost** up to 300% using Web Audio API GainNode (cycle via button or set in popup).
+  - **Auto-Hide** after 2s of inactivity so subtitles/captions are never obscured.
+  - **Overlay Position** chooser: top-right, top-left, bottom-right, or bottom-left.
+  - React-immune position tracking via `IntersectionObserver` + `ResizeObserver` + rAF debouncing.
+  - New **Video** tab in popup for full control over all overlay options.
 
 ### v2.0.2
 - **Permanent Dimmer Lock on Hover**:
