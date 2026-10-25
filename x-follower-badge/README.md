@@ -1,6 +1,15 @@
-# X Follower Tracker & Enhancer (v2.0.3)
+# X Follower Tracker & Enhancer (v2.0.4)
 
 A powerful, lightweight Chromium extension (Manifest V3) that enriches your X (Twitter) experience with real-time author follower badges, trust & quality signals, inline CRM tagging & private notes, video speed power suite, and automatic "Show more" post expansion.
+
+## 🚀 What's New in v2.0.4
+
+- 🎯 **Fixed Full-Format & Modal Video Speed Pill Leak**:
+  - Eliminated speed pills from background/feed videos showing up in the middle of full-format (lightbox / media viewer) videos.
+  - Added active modal/layer detection (`#layers [role="dialog"]`) to cleanly hide background video overlays when opening full-format media.
+  - Implemented viewport occlusion testing (`xvsIsElementOccluded`) to prevent hidden or covered videos from displaying floating pills.
+  - Added HTML5 native fullscreen support: overlays attach directly to the fullscreen element and hide background videos.
+  - Integrated SPA navigation hooks (`popstate`, `pushState`, `replaceState`, `Escape` key) to instantly refresh overlay visibility during page transitions.
 
 ## 🚀 What's New in v2.0.3
 

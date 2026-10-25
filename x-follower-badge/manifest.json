@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "X Follower Tracker & Enhancer",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "description": "Shows author follower badges, trust signals, custom CRM tags & notes, video speed controls, and auto-expands 'Show more' posts on X (Twitter).",
   "permissions": ["storage"],
   "host_permissions": [
@@ -10,7 +10,7 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "X Follower Tracker v2.0.3",
+    "default_title": "X Follower Tracker v2.0.4",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",

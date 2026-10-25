@@ -1,4 +1,4 @@
-// X Follower Tracker & Enhancer - Zero-Network Interceptor (v2.0.2)
+// X Follower Tracker & Enhancer - Zero-Network Interceptor (v2.0.4)
 // Runs in MAIN world (page context).
 // Extracts author metadata from:
 // 1. React Fiber instances on DOM nodes (Instant 0ms, covers SSR & initial tweets)

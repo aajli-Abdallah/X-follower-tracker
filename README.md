@@ -1,7 +1,7 @@
 # X Follower Tracker & Enhancer (Chrome Extension) 👥⚡
 
 [![Manifest V3](https://img.shields.io/badge/Manifest-V3-brightgreen.svg)](x-follower-badge/manifest.json)
-[![Version](https://img.shields.io/badge/version-2.0.3-blue.svg)](x-follower-badge/manifest.json)
+[![Version](https://img.shields.io/badge/version-2.0.4-blue.svg)](x-follower-badge/manifest.json)
 [![Chrome Web Store](https://img.shields.io/badge/Chrome_Web_Store-Available-blue?logo=googlechrome)](https://chromewebstore.google.com/detail/x-follower-badge/ndhpilocfkkgojkbamejgngmmnfaljin)
 [![Browser Support](https://img.shields.io/badge/browsers-Chrome%20%7C%20Brave%20%7C%20Edge-orange.svg)](#installation)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -99,6 +99,14 @@ Install directly from the [Chrome Web Store](https://chromewebstore.google.com/d
 ---
 
 ## 🏷️ Release Notes
+
+### v2.0.4
+- **🎯 Full-Format & Modal Video Speed Pill Fix**:
+  - Eliminated background feed video speed pills showing up in the middle of full-format (lightbox / media viewer / dialog) videos.
+  - Added active modal detection (`#layers [role="dialog"]`) to suppress background video overlays while full-format media is open.
+  - Viewport occlusion verification (`xvsIsElementOccluded`): checks if a video is covered by another layer, drawer, or sticky header before showing controls.
+  - Native HTML5 Fullscreen support: overlays attach to `document.fullscreenElement` and hide background video overlays during fullscreen playback.
+  - SPA navigation & lifecycle hooks: listens to `popstate`, `pushState`, `replaceState`, `fullscreenchange`, and `Escape` to immediately refresh overlay visibility.
 
 ### v2.0.3
 - **🎬 X Video Speed Controller**: Full video speed overlay ported and adapted from the FB Video Speed project:

@@ -1,4 +1,4 @@
-// X Follower Tracker & Enhancer - Content Script v2.0.3
+// X Follower Tracker & Enhancer - Content Script v2.0.4
 // Features: Zero-Network Interceptor Bridge, CRM Tags & Notes, Trust Signals, Hover Card, Timeline Dimmer, Video Speed Controller
 
 (() => {
@@ -931,6 +931,7 @@
   // --- Mutation Observer ---
 
   const observer = new MutationObserver((mutations) => {
+    let shouldRepositionVideos = false;
     for (const m of mutations) {
       for (const node of m.addedNodes) {
         if (!(node instanceof HTMLElement)) continue;
@@ -944,10 +945,38 @@
         }
         // Also pick up any newly added video elements
         if (typeof xvsScanForVideos === 'function') {
-          if (node.tagName === 'VIDEO') xvsTrackVideo(node);
-          else xvsScanForVideos(node);
+          if (node.tagName === 'VIDEO') {
+            xvsTrackVideo(node);
+            shouldRepositionVideos = true;
+          } else if (node.querySelector?.('video')) {
+            xvsScanForVideos(node);
+            shouldRepositionVideos = true;
+          }
+        }
+        if (node.id === 'layers' || node.closest?.('#layers') || node.getAttribute?.('role') === 'dialog') {
+          shouldRepositionVideos = true;
         }
       }
+
+      for (const node of m.removedNodes) {
+        if (!(node instanceof HTMLElement)) continue;
+        if (typeof xvsCleanUp === 'function') {
+          if (node.tagName === 'VIDEO') {
+            xvsCleanUp(node);
+            shouldRepositionVideos = true;
+          } else if (node.querySelector?.('video')) {
+            node.querySelectorAll('video').forEach((v) => xvsCleanUp(v));
+            shouldRepositionVideos = true;
+          }
+        }
+        if (node.id === 'layers' || node.closest?.('#layers') || node.getAttribute?.('role') === 'dialog') {
+          shouldRepositionVideos = true;
+        }
+      }
+    }
+
+    if (shouldRepositionVideos && typeof xvsScheduleReposition === 'function') {
+      xvsScheduleReposition();
     }
   });
 
@@ -1077,6 +1106,7 @@
   }
 
   function xvsTriggerAutoHide(entry) {
+    if (entry.overlay.style.display === 'none') return;
     if (!settings.videoAutoHide) {
       entry.overlay.classList.remove('xvs-autohide');
       entry.overlay.classList.add('xvs-visible');
@@ -1237,18 +1267,128 @@
     video.addEventListener('mousemove', () => xvsTriggerAutoHide(entry), { passive: true });
     video.addEventListener('mouseenter', () => xvsTriggerAutoHide(entry), { passive: true });
 
+    const playerContainer = video.closest('[data-testid="videoPlayer"], [data-testid="videoComponent"]') || video.parentElement;
+    if (playerContainer && playerContainer !== video) {
+      playerContainer.addEventListener('mousemove', () => xvsTriggerAutoHide(entry), { passive: true });
+      playerContainer.addEventListener('mouseenter', () => xvsTriggerAutoHide(entry), { passive: true });
+    }
+
     return entry;
+  }
+
+  // Detect active modal / lightbox / full-format dialog on Twitter/X
+  function xvsGetActiveModal() {
+    const layers = document.getElementById('layers');
+    if (layers) {
+      const modal = layers.querySelector('[role="dialog"], [aria-modal="true"], [data-testid="swipe-to-dismiss"], [data-testid="sheetDialog"]');
+      if (modal && modal.offsetWidth > 0 && modal.offsetHeight > 0) {
+        return modal;
+      }
+    }
+    const genericModal = document.querySelector('div[aria-modal="true"][role="dialog"]');
+    if (genericModal && genericModal.offsetWidth > 0 && genericModal.offsetHeight > 0) {
+      return genericModal;
+    }
+    return null;
+  }
+
+  // Check if a video is occluded by another element (e.g. modal, drawer, sticky header)
+  function xvsIsElementOccluded(video, rect) {
+    try {
+      const visibleTop = Math.max(0, rect.top);
+      const visibleBottom = Math.min(window.innerHeight, rect.bottom);
+      const visibleLeft = Math.max(0, rect.left);
+      const visibleRight = Math.min(window.innerWidth, rect.right);
+
+      if (visibleBottom <= visibleTop || visibleRight <= visibleLeft) return true;
+
+      const testX = (visibleLeft + visibleRight) / 2;
+      const testY = (visibleTop + visibleBottom) / 2;
+
+      const topEl = document.elementFromPoint(testX, testY);
+      if (!topEl) return false;
+
+      // If top element is our own overlay or panel, it's not occluded
+      if (topEl.closest('.xvs-overlay')) return false;
+
+      // If top element is the video or inside the video
+      if (topEl === video || video.contains(topEl)) return false;
+
+      // If top element belongs to the same video player or tweet container
+      const player = video.closest('[data-testid="videoPlayer"], [data-testid="videoComponent"], [data-testid="tweetPhoto"], article');
+      if (player && (player === topEl || player.contains(topEl))) return false;
+
+      // Otherwise, the element is occluded by a layer/modal on top of it
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 
   function xvsPositionOverlay(video, entry) {
     if (!video.isConnected) { xvsCleanUp(video); return; }
-    if (!settings.videoSpeedEnabled || !entry.inView) { entry.overlay.style.display = 'none'; return; }
+    if (!settings.videoSpeedEnabled) { entry.overlay.style.display = 'none'; return; }
+
+    // 1. Native HTML5 Fullscreen Handling
+    const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+    if (fsEl) {
+      const isThisVideoInFs = (fsEl === video || fsEl.contains(video));
+      if (!isThisVideoInFs) {
+        entry.overlay.style.display = 'none';
+        return;
+      }
+      if (entry.overlay.parentElement !== fsEl) {
+        fsEl.appendChild(entry.overlay);
+      }
+      entry.overlay.classList.add('xvs-fullscreen');
+      entry.overlay.style.cssText = 'display:block;position:absolute;top:0;left:0;width:100%;height:100%;z-index:2147483647;';
+      return;
+    } else {
+      entry.overlay.classList.remove('xvs-fullscreen');
+      if (entry.overlay.parentElement !== document.body) {
+        document.body.appendChild(entry.overlay);
+      }
+    }
+
+    // 2. Modal / Lightbox / Full-format view handling
+    const activeModal = xvsGetActiveModal();
+    if (activeModal) {
+      const isInsideModal = activeModal.contains(video);
+      if (!isInsideModal) {
+        // A modal / full-format viewer is open, and this video is in the background: hide overlay!
+        entry.overlay.style.display = 'none';
+        return;
+      }
+    }
+
+    // 3. Basic DOM Visibility & Viewport Intersection
+    if (!entry.inView) {
+      entry.overlay.style.display = 'none';
+      return;
+    }
+
+    if (video.offsetParent === null && !video.closest('#layers')) {
+      entry.overlay.style.display = 'none';
+      return;
+    }
+
     const rect = video.getBoundingClientRect();
-    const visible = rect.width > 60 && rect.height > 60 &&
+    const visible = rect.width >= 120 && rect.height >= 80 &&
       rect.bottom > 0 && rect.right > 0 &&
       rect.top < window.innerHeight && rect.left < window.innerWidth;
-    if (!visible) { entry.overlay.style.display = 'none'; return; }
-    entry.overlay.style.cssText = `display:block;top:${rect.top + window.scrollY}px;left:${rect.left + window.scrollX}px;width:${rect.width}px;height:${rect.height}px;`;
+    if (!visible) {
+      entry.overlay.style.display = 'none';
+      return;
+    }
+
+    // 4. Occlusion test
+    if (xvsIsElementOccluded(video, rect)) {
+      entry.overlay.style.display = 'none';
+      return;
+    }
+
+    // 5. Normal positioning on document.body using viewport coordinates
+    entry.overlay.style.cssText = `display:block;top:${rect.top}px;left:${rect.left}px;width:${rect.width}px;height:${rect.height}px;`;
   }
 
   let xvsRepositionScheduled = false;
@@ -1257,7 +1397,7 @@
     xvsRepositionScheduled = true;
     requestAnimationFrame(() => {
       xvsRepositionScheduled = false;
-      xvsTracked.forEach((entry, video) => { if (entry.inView) xvsPositionOverlay(video, entry); });
+      xvsTracked.forEach((entry, video) => { xvsPositionOverlay(video, entry); });
     });
   }
 
@@ -1295,6 +1435,10 @@
         video.playbackRate = entry.currentSpeed;
       }
       if ((settings.videoAudioBoost || 100) > 100) xvsApplyAudioBoost(video, settings.videoAudioBoost);
+      xvsScheduleReposition();
+    });
+    video.addEventListener('pause', () => {
+      xvsScheduleReposition();
     });
     video.addEventListener('ratechange', () => {
       if (settings.videoSpeedEnabled && !entry.applyingSpeed && Math.abs(video.playbackRate - entry.currentSpeed) > 0.01) {
@@ -1303,6 +1447,7 @@
     });
     video.addEventListener('loadedmetadata', () => {
       if (settings.videoSpeedEnabled) xvsApplySpeed(video, entry, entry.userChosenSpeed ?? settings.videoPreferredSpeed ?? 1);
+      xvsScheduleReposition();
     });
 
     if (settings.videoSpeedEnabled) {
@@ -1344,12 +1489,38 @@
     });
   }
 
-  // Hook into loadSettings to also start video scanner once settings are ready
-  const _origLoadSettings = loadSettings;
-  // We call xvsScanForVideos after settings load completes — handled below in bootstrap.
-
-  window.addEventListener('scroll', xvsScheduleReposition, { passive: true });
+  // X can scroll inside nested timeline containers. Capture catches those scroll
+  // events as well as normal page scrolling so the overlay tracks every video.
+  document.addEventListener('scroll', xvsScheduleReposition, { capture: true, passive: true });
   window.addEventListener('resize', xvsScheduleReposition, { passive: true });
+  document.addEventListener('fullscreenchange', xvsScheduleReposition);
+  document.addEventListener('webkitfullscreenchange', xvsScheduleReposition);
+  window.addEventListener('popstate', xvsScheduleReposition);
+
+  // Hook pushState and replaceState to catch SPA page transitions and modal opens/closes
+  const _origPushState = history.pushState;
+  if (_origPushState) {
+    history.pushState = function(...args) {
+      const res = _origPushState.apply(this, args);
+      setTimeout(xvsScheduleReposition, 50);
+      return res;
+    };
+  }
+  const _origReplaceState = history.replaceState;
+  if (_origReplaceState) {
+    history.replaceState = function(...args) {
+      const res = _origReplaceState.apply(this, args);
+      setTimeout(xvsScheduleReposition, 50);
+      return res;
+    };
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      setTimeout(xvsScheduleReposition, 100);
+    }
+  });
+
   setInterval(xvsScanForVideos, 2500);
 
   // ============================================================

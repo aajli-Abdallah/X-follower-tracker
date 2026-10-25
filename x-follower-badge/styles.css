@@ -1,4 +1,4 @@
-/* X Follower Tracker & Enhancer - v2.0.3 Stylesheet */
+/* X Follower Tracker & Enhancer - v2.0.4 Stylesheet */
 
 /* --- Follower Badges & Quality Indicators --- */
 .xfb-badge-group {
@@ -450,7 +450,7 @@ html.xfb-hide-tags .xfb-tag-pill {
 }
 
 /* ============================================================ */
-/* --- X Video Speed Controller Overlay (v2.0.3) --- */
+/* --- X Video Speed Controller Overlay (v2.0.4) --- */
 /* ============================================================ */
 
 .xvs-overlay {
@@ -463,11 +463,24 @@ html.xfb-hide-tags .xfb-tag-pill {
 .xvs-overlay.xvs-autohide {
   opacity: 0;
   visibility: hidden;
+  pointer-events: none !important;
+}
+
+.xvs-overlay.xvs-autohide .xvs-panel {
+  pointer-events: none !important;
 }
 
 .xvs-overlay.xvs-visible {
   opacity: 1;
   visibility: visible;
+}
+
+.xvs-overlay.xvs-fullscreen {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .xvs-panel {

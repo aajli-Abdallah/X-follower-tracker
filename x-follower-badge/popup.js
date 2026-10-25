@@ -1,4 +1,4 @@
-// X Follower Tracker & Enhancer - Popup Controller v2.0.3
+// X Follower Tracker & Enhancer - Popup Controller v2.0.4
 
 const DEFAULTS = {
   autoExpandShowMore: true,
